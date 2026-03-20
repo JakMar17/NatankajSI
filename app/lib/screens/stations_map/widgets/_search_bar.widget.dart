@@ -1,4 +1,4 @@
-part of "../stations_map.screen.dart";
+part of '../stations_map.screen.dart';
 
 class _SearchBar extends StatelessWidget {
   const _SearchBar();
@@ -163,103 +163,5 @@ class _SearchBar extends StatelessWidget {
     }
 
     return Image.network(logoUrl!, width: 36, height: 36);
-  }
-}
-
-class _LocateMeButton extends StatelessWidget {
-  const _LocateMeButton();
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.only(top: 80, right: 12),
-        child: Align(
-          alignment: Alignment.topRight,
-          child: BlocBuilder<StationsMapCubit, StationsMapState>(
-            buildWhen: (previous, current) {
-              return previous.isLocating != current.isLocating;
-            },
-            builder: (context, state) {
-              return DecoratedBox(
-                decoration: BoxDecoration(
-                  color: const Color(0xE0111A2B),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0x55FFFFFF)),
-                ),
-                child: IconButton(
-                  onPressed: state.isLocating
-                      ? null
-                      : () async {
-                          final result = await context
-                              .read<StationsMapCubit>()
-                              .centerOnUserLocation();
-
-                          if (!context.mounted) {
-                            return;
-                          }
-
-                          _handleLocationResult(context, result);
-                        },
-                  icon: state.isLocating
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(
-                          Icons.my_location_rounded,
-                          color: AppColors.textPrimary,
-                        ),
-                  tooltip: 'Center on my location',
-                ),
-              );
-            },
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _handleLocationResult(
-    BuildContext context,
-    LocationCenteringResult result,
-  ) {
-    switch (result) {
-      case LocationCenteringResult.success:
-        return;
-      case LocationCenteringResult.permissionDenied:
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Location permission denied.')),
-        );
-        return;
-      case LocationCenteringResult.permissionDeniedForever:
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Location permission is permanently denied.'),
-            action: SnackBarAction(
-              label: 'Settings',
-              onPressed: Geolocator.openAppSettings,
-            ),
-          ),
-        );
-        return;
-      case LocationCenteringResult.serviceDisabled:
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Location services are disabled.'),
-            action: SnackBarAction(
-              label: 'Enable',
-              onPressed: Geolocator.openLocationSettings,
-            ),
-          ),
-        );
-        return;
-      case LocationCenteringResult.error:
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not get current location.')),
-        );
-        return;
-    }
   }
 }

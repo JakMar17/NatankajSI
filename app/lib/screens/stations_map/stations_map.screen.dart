@@ -14,7 +14,11 @@ import 'package:app/data/data.dart';
 import 'package:app/styles/styles.dart';
 import 'package:app/widgets/base/base.dart';
 
-part 'widgets/_map_top_bar.widget.dart';
+part 'widgets/_search_bar.widget.dart';
+part 'widgets/_map_actions.widget.dart';
+part 'widgets/_filters_bottom_sheet.widget.dart';
+part 'widgets/_filters_tags.widget.dart';
+part 'widgets/_multi_select_picker.widget.dart';
 part 'widgets/_station_details_sheet.widget.dart';
 
 const double _stationMarkerWidth = 92;
@@ -60,7 +64,7 @@ class _StationsMapView extends StatelessWidget {
             body: Stack(
               children: [
                 _MapBody(state: state),
-                const _LocateMeButton(),
+                const _MapActions(),
                 SafeArea(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
@@ -130,6 +134,7 @@ class _MapBody extends StatelessWidget {
           franchise: station.franchiseId == null
               ? null
               : state.franchisesById[station.franchiseId],
+          preferredFuelCode: state.preferredFuelCode,
           isSelected: state.selectedStation?.pk == station.pk,
           onTap: () {
             context.read<StationsMapCubit>().selectStation(station);
@@ -175,18 +180,23 @@ class _StationMarker extends StatelessWidget {
   const _StationMarker({
     required this.station,
     required this.franchise,
+    required this.preferredFuelCode,
     required this.isSelected,
     required this.onTap,
   });
 
   final StationWithPrices station;
   final Franchise? franchise;
+  final String? preferredFuelCode;
   final bool isSelected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final fuel95 = _findFuel95(station.latestPrices);
+    final markerFuel = _resolveMarkerFuel(
+      prices: station.latestPrices,
+      preferredFuelCode: preferredFuelCode,
+    );
     final logoUrl = franchise?.markerUrl;
 
     return GestureDetector(
@@ -202,7 +212,9 @@ class _StationMarker extends StatelessWidget {
               border: Border.all(color: AppColors.glassStroke),
             ),
             child: Text(
-              fuel95 == null ? '--' : '${fuel95.price.toStringAsFixed(3)} EUR',
+              markerFuel == null
+                  ? '--'
+                  : '${markerFuel.price.toStringAsFixed(3)} EUR',
               style: TextStyle(
                 color: isSelected ? Colors.black : AppColors.textPrimary,
                 fontWeight: FontWeight.w700,
@@ -317,6 +329,38 @@ class _UserLocationMarker extends StatelessWidget {
       ),
     );
   }
+}
+
+LatestPriceEntry? _resolveMarkerFuel({
+  required List<LatestPriceEntry> prices,
+  required String? preferredFuelCode,
+}) {
+  final preferredFuel = _findFuelByCode(prices, preferredFuelCode);
+
+  if (preferredFuel != null) {
+    return preferredFuel;
+  }
+
+  return _findFuel95(prices) ?? (prices.isEmpty ? null : prices.first);
+}
+
+LatestPriceEntry? _findFuelByCode(
+  List<LatestPriceEntry> prices,
+  String? fuelCode,
+) {
+  final normalizedFuelCode = fuelCode?.trim().toLowerCase();
+
+  if (normalizedFuelCode == null || normalizedFuelCode.isEmpty) {
+    return null;
+  }
+
+  for (final entry in prices) {
+    if (entry.fuelCode.toLowerCase() == normalizedFuelCode) {
+      return entry;
+    }
+  }
+
+  return null;
 }
 
 LatestPriceEntry? _findFuel95(List<LatestPriceEntry> prices) {

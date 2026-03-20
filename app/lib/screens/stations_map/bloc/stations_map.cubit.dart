@@ -5,6 +5,7 @@ import 'package:dart_util_box/dart_util_box.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:app/screens/stations_map/bloc/stations_map.state.dart';
 import 'package:app/data/data.dart';
@@ -36,6 +37,8 @@ class StationsMapCubit extends Cubit<StationsMapState> {
   static const double _dropdownSelectionZoom = 16;
   static const double _userLocationZoom = 15;
   static const Distance _distance = Distance();
+  static const String _preferredFuelCodeKey =
+      'stations_map.preferred_fuel_code';
 
   Future<void> loadData() async {
     emit(state.copyWith(isLoading: true, clearErrorMessage: true));
@@ -59,10 +62,17 @@ class StationsMapCubit extends Cubit<StationsMapState> {
       final fuelsByCode = {
         for (final fuel in fuels) fuel.code.toLowerCase(): fuel,
       };
+      final preferredFuelCode = await _loadPreferredFuelCode();
+      final resolvedPreferredFuelCode =
+          preferredFuelCode != null && fuelsByCode.containsKey(preferredFuelCode)
+          ? preferredFuelCode
+          : null;
       final filteredStations = _filterStations(
         stations: stationsWithCoordinates,
         query: state.searchQuery,
         franchisesById: franchisesById,
+        selectedFranchiseIds: state.selectedFranchiseIds,
+        selectedFuelCodes: state.selectedFuelCodes,
       );
 
       emit(
@@ -72,9 +82,14 @@ class StationsMapCubit extends Cubit<StationsMapState> {
           stations: filteredStations,
           franchisesById: franchisesById,
           fuelsByCode: fuelsByCode,
+          preferredFuelCode: resolvedPreferredFuelCode,
           clearSelectedStation: true,
         ),
       );
+
+      if (preferredFuelCode != resolvedPreferredFuelCode) {
+        await _savePreferredFuelCode(resolvedPreferredFuelCode);
+      }
 
       await centerOnUserLocation();
     } on Exception catch (error) {
@@ -98,15 +113,46 @@ class StationsMapCubit extends Cubit<StationsMapState> {
     );
 
     _searchDebounce = Timer(_searchDebounceDuration, () {
-      _applyFilter(query);
+      _applyFilters();
     });
   }
 
-  void _applyFilter(String query) {
+  void applyFilters({
+    required Set<int> franchiseIds,
+    required Set<String> fuelCodes,
+    required String? preferredFuelCode,
+  }) async {
+    final normalizedPreferredFuelCode = preferredFuelCode?.toLowerCase();
+
+    emit(
+      state.copyWith(
+        selectedFranchiseIds: franchiseIds,
+        selectedFuelCodes: fuelCodes.map((code) => code.toLowerCase()).toSet(),
+        preferredFuelCode: normalizedPreferredFuelCode,
+        clearPreferredFuelCode: normalizedPreferredFuelCode == null,
+      ),
+    );
+    await _savePreferredFuelCode(normalizedPreferredFuelCode);
+    _applyFilters();
+  }
+
+  void clearFilters() {
+    emit(
+      state.copyWith(
+        selectedFranchiseIds: const <int>{},
+        selectedFuelCodes: const <String>{},
+      ),
+    );
+    _applyFilters();
+  }
+
+  void _applyFilters() {
     final filteredStations = _filterStations(
       stations: state.allStations,
-      query: query,
+      query: state.searchQuery,
       franchisesById: state.franchisesById,
+      selectedFranchiseIds: state.selectedFranchiseIds,
+      selectedFuelCodes: state.selectedFuelCodes,
     );
 
     final selectedStation = state.selectedStation;
@@ -127,10 +173,14 @@ class StationsMapCubit extends Cubit<StationsMapState> {
     required List<StationWithPrices> stations,
     required String query,
     required Map<int, Franchise> franchisesById,
+    required Set<int> selectedFranchiseIds,
+    required Set<String> selectedFuelCodes,
   }) {
     final normalizedQuery = query.trim().toLowerCase();
 
-    if (normalizedQuery.isEmpty) {
+    if (normalizedQuery.isEmpty &&
+        selectedFranchiseIds.isEmpty &&
+        selectedFuelCodes.isEmpty) {
       return stations;
     }
 
@@ -146,8 +196,20 @@ class StationsMapCubit extends Cubit<StationsMapState> {
         station.franchiseName,
         franchise?.name,
       ].whereType<String>().map((value) => value.toLowerCase());
+      final matchesQuery =
+          normalizedQuery.isEmpty ||
+          haystack.any((value) => value.contains(normalizedQuery));
+      final matchesFranchise =
+          selectedFranchiseIds.isEmpty ||
+          (station.franchiseId != null &&
+              selectedFranchiseIds.contains(station.franchiseId));
+      final matchesFuel =
+          selectedFuelCodes.isEmpty ||
+          station.latestPrices.any(
+            (price) => selectedFuelCodes.contains(price.fuelCode.toLowerCase()),
+          );
 
-      return haystack.any((value) => value.contains(normalizedQuery));
+      return matchesQuery && matchesFranchise && matchesFuel;
     });
   }
 
@@ -327,5 +389,28 @@ class StationsMapCubit extends Cubit<StationsMapState> {
     }
 
     return 9;
+  }
+
+  Future<String?> _loadPreferredFuelCode() async {
+    final sharedPreferences = await SharedPreferences.getInstance();
+    final savedValue = sharedPreferences.getString(_preferredFuelCodeKey);
+    final normalizedValue = savedValue?.trim().toLowerCase();
+
+    if (normalizedValue == null || normalizedValue.isEmpty) {
+      return null;
+    }
+
+    return normalizedValue;
+  }
+
+  Future<void> _savePreferredFuelCode(String? value) async {
+    final sharedPreferences = await SharedPreferences.getInstance();
+
+    if (value == null || value.isEmpty) {
+      await sharedPreferences.remove(_preferredFuelCodeKey);
+      return;
+    }
+
+    await sharedPreferences.setString(_preferredFuelCodeKey, value);
   }
 }

@@ -16,6 +16,9 @@ class StationsMapState {
     required this.stations,
     required this.franchisesById,
     required this.fuelsByCode,
+    required this.selectedFranchiseIds,
+    required this.selectedFuelCodes,
+    required this.preferredFuelCode,
     required this.selectedStation,
     required this.userLocation,
   });
@@ -31,6 +34,9 @@ class StationsMapState {
       stations: const <StationWithPrices>[],
       franchisesById: const <int, Franchise>{},
       fuelsByCode: const <String, FuelType>{},
+      selectedFranchiseIds: const <int>{},
+      selectedFuelCodes: const <String>{},
+      preferredFuelCode: null,
       selectedStation: null,
       userLocation: null,
     );
@@ -45,10 +51,16 @@ class StationsMapState {
   final List<StationWithPrices> stations;
   final Map<int, Franchise> franchisesById;
   final Map<String, FuelType> fuelsByCode;
+  final Set<int> selectedFranchiseIds;
+  final Set<String> selectedFuelCodes;
+  final String? preferredFuelCode;
   final StationWithPrices? selectedStation;
   final LatLng? userLocation;
 
   int get totalStations => allStations.length;
+  bool get hasActiveFilters {
+    return selectedFranchiseIds.isNotEmpty || selectedFuelCodes.isNotEmpty;
+  }
 
   LatLng get center {
     if (userLocation != null) {
@@ -81,6 +93,10 @@ class StationsMapState {
     List<StationWithPrices>? stations,
     Map<int, Franchise>? franchisesById,
     Map<String, FuelType>? fuelsByCode,
+    Set<int>? selectedFranchiseIds,
+    Set<String>? selectedFuelCodes,
+    String? preferredFuelCode,
+    bool clearPreferredFuelCode = false,
     StationWithPrices? selectedStation,
     bool clearSelectedStation = false,
     LatLng? userLocation,
@@ -97,6 +113,11 @@ class StationsMapState {
       stations: stations ?? this.stations,
       franchisesById: franchisesById ?? this.franchisesById,
       fuelsByCode: fuelsByCode ?? this.fuelsByCode,
+      selectedFranchiseIds: selectedFranchiseIds ?? this.selectedFranchiseIds,
+      selectedFuelCodes: selectedFuelCodes ?? this.selectedFuelCodes,
+        preferredFuelCode: clearPreferredFuelCode
+          ? null
+          : (preferredFuelCode ?? this.preferredFuelCode),
       selectedStation: clearSelectedStation
           ? null
           : (selectedStation ?? this.selectedStation),
