@@ -1,0 +1,11 @@
+services:
+  goriva-parser:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:///./data/goriva.db
+      - FETCH_INTERVAL_HOURS=1
+    restart: unless-stopped

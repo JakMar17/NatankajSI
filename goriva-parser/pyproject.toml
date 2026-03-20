@@ -1,0 +1,16 @@
+[project]
+name = "goriva-parser"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "aiosqlite>=0.22.1",
+    "alembic>=1.18.4",
+    "apscheduler==4.0.0a6",
+    "fastapi>=0.135.1",
+    "httpx>=0.28.1",
+    "pydantic-settings>=2.13.1",
+    "sqlalchemy[asyncio]>=2.0.48",
+    "uvicorn[standard]>=0.42.0",
+]

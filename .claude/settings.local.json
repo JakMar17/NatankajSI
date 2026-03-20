@@ -1,0 +1,42 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:goriva.si)",
+      "Bash(uv init:*)",
+      "Bash(/opt/homebrew/bin/uv --version)",
+      "Bash(~/.local/bin/uv --version)",
+      "Read(//Users/jakob/.cargo/bin/**)",
+      "Read(//usr/**)",
+      "Bash(curl -LsSf https://astral.sh/uv/install.sh)",
+      "Bash(sh)",
+      "Bash(export PATH=\"$HOME/.local/bin:$PATH\")",
+      "Bash(uv --version)",
+      "Bash(uv add:*)",
+      "Bash(uv python:*)",
+      "Bash(uv pip:*)",
+      "Bash(export PATH=$HOME/.local/bin:$PATH)",
+      "Bash(pip index:*)",
+      "Bash(python3.12 -m pip index versions apscheduler)",
+      "Bash(uv run:*)",
+      "Bash(/Users/jakob/Documents/01-projects/10-goriva_parser/goriva-parser/.gitignore:*)",
+      "Bash(/Users/jakob/Documents/01-projects/10-goriva_parser/goriva-parser/.env.example:*)",
+      "Bash(/Users/jakob/Documents/01-projects/10-goriva_parser/goriva-parser/app/database.py:*)",
+      "Bash(/Users/jakob/Documents/01-projects/10-goriva_parser/goriva-parser/app/models/orm.py:*)",
+      "Bash(/Users/jakob/Documents/01-projects/10-goriva_parser/goriva-parser/app/api/v1/fuels.py:*)",
+      "Bash(/Users/jakob/Documents/01-projects/10-goriva_parser/goriva-parser/app/api/v1/franchises.py:*)",
+      "Bash(/Users/jakob/Documents/01-projects/10-goriva_parser/goriva-parser/app/api/v1/stations.py:*)",
+      "Bash(/Users/jakob/Documents/01-projects/10-goriva_parser/goriva-parser/app/api/v1/fetch_log.py:*)",
+      "Bash(/Users/jakob/Documents/01-projects/10-goriva_parser/goriva-parser/app/api/v1/router.py:*)",
+      "Bash(/Users/jakob/Documents/01-projects/10-goriva_parser/goriva-parser/app/main.py:*)",
+      "Bash(/Users/jakob/Documents/01-projects/10-goriva_parser/goriva-parser/docker-compose.yml:*)",
+      "Bash(curl:*)",
+      "Bash(kill 56997)",
+      "Bash(python3 -m json.tool)",
+      "Bash(python3 -m json.tool echo \"=== fuels ===\")",
+      "Bash(python3 -c \"import json,sys; data=json.load\\(sys.stdin\\); print\\(json.dumps\\(data[0], indent=2\\)\\)\" echo \"=== prices/latest \\(first 2\\) ===\")",
+      "Bash(python3 -c \"import json,sys; data=json.load\\(sys.stdin\\); print\\(json.dumps\\(data[:2], indent=2\\)\\)\")",
+      "Bash(python3 -m json.tool echo \"=== station price history \\(limit 3 with fuel filter\\) ===\")",
+      "Bash(/Users/jakob/Documents/01-projects/10-goriva_parser/goriva-parser/app/api/v1/prices.py:*)"
+    ]
+  }
+}
