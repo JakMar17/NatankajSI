@@ -242,6 +242,23 @@ class StationsMapCubit extends Cubit<StationsMapState> {
     emit(state.copyWith(selectedStation: station));
   }
 
+  void selectStationByPk(int stationPk) {
+    StationWithPrices? station;
+
+    for (final entry in state.allStations) {
+      if (entry.pk == stationPk) {
+        station = entry;
+        break;
+      }
+    }
+
+    if (station == null) {
+      return;
+    }
+
+    selectStation(station);
+  }
+
   void clearSelection() {
     if (state.selectedStation == null) {
       return;

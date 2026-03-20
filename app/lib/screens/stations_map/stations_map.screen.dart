@@ -32,10 +32,26 @@ const double _detailsSheetMaxSize = 0.75;
 
 /// Displays all fuel stations on a map with a station details bottom sheet.
 class StationsMapScreen extends StatelessWidget {
-  const StationsMapScreen({super.key});
+  const StationsMapScreen({
+    super.key,
+    this.onStationSelectionChanged,
+    this.cubit,
+  });
+
+  final ValueChanged<bool>? onStationSelectionChanged;
+  final StationsMapCubit? cubit;
 
   @override
   Widget build(BuildContext context) {
+    if (cubit != null) {
+      return BlocProvider<StationsMapCubit>.value(
+        value: cubit!,
+        child: _StationsMapView(
+          onStationSelectionChanged: onStationSelectionChanged,
+        ),
+      );
+    }
+
     return BlocProvider(
       create: (context) {
         return StationsMapCubit(
@@ -44,17 +60,27 @@ class StationsMapScreen extends StatelessWidget {
           fuelsApiService: context.read<FuelsApiService>(),
         )..loadData();
       },
-      child: const _StationsMapView(),
+      child: _StationsMapView(
+        onStationSelectionChanged: onStationSelectionChanged,
+      ),
     );
   }
 }
 
 class _StationsMapView extends StatelessWidget {
-  const _StationsMapView();
+  const _StationsMapView({this.onStationSelectionChanged});
+
+  final ValueChanged<bool>? onStationSelectionChanged;
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<StationsMapCubit, StationsMapState>(
+    return BlocConsumer<StationsMapCubit, StationsMapState>(
+      listenWhen: (previous, current) {
+        return previous.selectedStation?.pk != current.selectedStation?.pk;
+      },
+      listener: (context, state) {
+        onStationSelectionChanged?.call(state.selectedStation != null);
+      },
       builder: (context, state) {
         return DecoratedBox(
           decoration: const BoxDecoration(gradient: AppGradients.appBackground),

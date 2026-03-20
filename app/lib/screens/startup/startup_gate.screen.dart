@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:app/data/data.dart';
+import 'package:app/screens/home/home.screen.dart';
 import 'package:app/screens/startup/bloc/startup_gate.cubit.dart';
 import 'package:app/screens/startup/bloc/startup_gate.state.dart';
-import 'package:app/screens/stations_map/stations_map.screen.dart';
 import 'package:app/styles/styles.dart';
 import 'package:app/widgets/base/base.dart';
 
@@ -31,7 +31,7 @@ class StartupGateScreen extends StatelessWidget {
                 onRetry: context.read<StartupGateCubit>().load,
               );
             case StartupGateStatus.ready:
-              return const StationsMapScreen();
+              return const HomeScreen();
             case StartupGateStatus.selectPreference:
               return _FuelPreferenceWelcomeScreen(
                 fuels: state.fuels,
@@ -141,21 +141,20 @@ class _FuelPreferenceWelcomeScreen extends StatelessWidget {
                   child: SingleChildScrollView(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: fuels
-                          .mapToList(
-                            (fuel) => Padding(
-                              padding: const EdgeInsets.only(bottom: 10),
-                              child: _FuelOptionCard(
-                                fuel: fuel,
-                                label: fuelLabelResolver(fuel),
-                                isSelected:
-                                    selectedFuelCode == fuel.code.toLowerCase(),
-                                onTap: () {
-                                  onFuelSelected(fuel.code.toLowerCase());
-                                },
-                              ),
-                            ),
+                      children: fuels.mapToList(
+                        (fuel) => Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: _FuelOptionCard(
+                            fuel: fuel,
+                            label: fuelLabelResolver(fuel),
+                            isSelected:
+                                selectedFuelCode == fuel.code.toLowerCase(),
+                            onTap: () {
+                              onFuelSelected(fuel.code.toLowerCase());
+                            },
                           ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
