@@ -157,6 +157,8 @@ Use `cached_network_image` for network images. Always provide `errorWidget` and 
 - Use `const` constructors wherever possible to reduce rebuilds.
 - Break large `build()` methods into smaller, private `Widget` classes (not helper methods returning widgets).
 - Use `ListView.builder` or `SliverList` for long/dynamic lists.
+- Avoid `Positioned` when possible; prefer layout widgets like `Align`,
+  `Padding`, `SizedBox`, `Row`, and `Column` first.
 - Avoid expensive operations (network calls, heavy computation) inside `build()`.
 
 ### Documentation

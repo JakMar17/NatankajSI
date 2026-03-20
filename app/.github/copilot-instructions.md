@@ -114,6 +114,9 @@ mobile platforms.
   the UI needs to change, Flutter rebuilds the widget tree.
 * **Composition:** Prefer composing smaller widgets over extending existing
   ones. Use this to avoid deep widget nesting.
+* **Avoid Positioned by Default:** Avoid `Positioned` when possible; prefer
+  layout widgets like `Align`, `Padding`, `SizedBox`, `Row`, and `Column`
+  first.
 * **Private Widgets:** Use small, private `Widget` classes instead of private
   helper methods that return a `Widget`.
 * **Build Methods:** Break down large `build()` methods into smaller, reusable
@@ -489,7 +492,8 @@ final ButtonStyle myButtonStyle = ButtonStyle(
 
 ### Layering Widgets with Stack
 
-* **`Positioned`:** Use to precisely place a child within a `Stack` by anchoring it to the edges.
+* **`Positioned`:** Use only when there is no practical non-positioned
+  alternative for the desired layout in a `Stack`.
 * **`Align`:** Use to position a child within a `Stack` using alignments like `Alignment.center`.
 
 ### Advanced Layout with Overlays
