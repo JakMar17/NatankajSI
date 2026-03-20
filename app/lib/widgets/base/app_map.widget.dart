@@ -13,6 +13,7 @@ class AppMap extends StatelessWidget {
   const AppMap({
     required this.center,
     required this.markers,
+    this.nonClusterMarkers = const <Marker>[],
     this.mapController,
     this.initialZoom = 9,
     this.minZoom = 4,
@@ -20,7 +21,7 @@ class AppMap extends StatelessWidget {
     this.onTap,
     this.clusterMarkers = true,
     this.maxClusterRadius = 70,
-    this.clusterBreakoutZoom = 12,
+    this.clusterBreakoutZoom = 16,
     this.clusterSize = const Size(46, 46),
     this.clusterPadding = const EdgeInsets.all(60),
     this.clusterBuilder,
@@ -32,6 +33,7 @@ class AppMap extends StatelessWidget {
   final MapController? mapController;
   final LatLng center;
   final List<Marker> markers;
+  final List<Marker> nonClusterMarkers;
   final double initialZoom;
   final double minZoom;
   final double maxZoom;
@@ -42,7 +44,7 @@ class AppMap extends StatelessWidget {
   final Size clusterSize;
   final EdgeInsets clusterPadding;
   final Widget Function(BuildContext context, List<Marker> markers)?
-      clusterBuilder;
+  clusterBuilder;
   final String tileUrlTemplate;
   final List<String> tileSubdomains;
 
@@ -69,6 +71,8 @@ class AppMap extends StatelessWidget {
               maxClusterRadius: maxClusterRadius,
               size: clusterSize,
               alignment: Alignment.center,
+              showPolygon: false,
+              disableClusteringAtZoom: clusterBreakoutZoom.toInt(),
               maxZoom: clusterBreakoutZoom,
               padding: clusterPadding,
               markers: markers,
@@ -77,6 +81,8 @@ class AppMap extends StatelessWidget {
           )
         else
           MarkerLayer(markers: markers),
+        if (nonClusterMarkers.isNotEmpty)
+          MarkerLayer(markers: nonClusterMarkers),
         RichAttributionWidget(
           attributions: const [
             TextSourceAttribution('© OpenStreetMap contributors'),
