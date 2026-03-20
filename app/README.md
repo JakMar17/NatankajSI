@@ -1,6 +1,6 @@
-# natankaj
+# app
 
-Natankaj - cena goriva po Sloveniji
+A new Flutter project.
 
 ## Getting Started
 

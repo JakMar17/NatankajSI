@@ -1,4 +1,4 @@
-package team.marela.natankaj.natankaj
+package team.marela.natankaj.app
 
 import io.flutter.embedding.android.FlutterActivity
 
