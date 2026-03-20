@@ -83,6 +83,7 @@ class _FuelLocationsLoadedView extends StatelessWidget {
         return _LocationCard(
           item: item,
           fuelCode: fuelCode,
+          averagePrice: statistics.averagePrice,
           onPressed: () {
             onStationPressed(item.stationPk);
             Navigator.of(context).pop();

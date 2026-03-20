@@ -6,6 +6,7 @@ import 'package:app/screens/statistics/bloc/fuel_locations.cubit.dart';
 import 'package:app/screens/statistics/bloc/fuel_locations.state.dart';
 import 'package:app/screens/statistics/bloc/statistics.state.dart';
 import 'package:app/styles/styles.dart';
+import 'package:app/widgets/base/base.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 

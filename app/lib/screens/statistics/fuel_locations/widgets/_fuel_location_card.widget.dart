@@ -4,11 +4,13 @@ class _LocationCard extends StatelessWidget {
   const _LocationCard({
     required this.item,
     required this.fuelCode,
+    required this.averagePrice,
     required this.onPressed,
   });
 
   final FuelLocationItem item;
   final String fuelCode;
+  final double averagePrice;
   final VoidCallback onPressed;
 
   bool get _hasDistance => item.distanceKm != null;
@@ -76,12 +78,19 @@ class _LocationCard extends StatelessWidget {
                   ],
                 ),
               ),
-              Text(
-                '${item.price.toStringAsFixed(3)} €/L',
-                textAlign: TextAlign.end,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                spacing: 4,
+                children: [
+                  Text(
+                    '${item.price.toStringAsFixed(3)} €/L',
+                    textAlign: TextAlign.end,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  PriceDeltaBadge(delta: item.price - averagePrice),
+                ],
               ),
             ],
           ),

@@ -16,6 +16,7 @@ class StationsMapState {
     required this.stations,
     required this.franchisesById,
     required this.fuelsByCode,
+    required this.averagesByFuelCode,
     required this.selectedFranchiseIds,
     required this.selectedFuelCodes,
     required this.preferredFuelCode,
@@ -34,6 +35,7 @@ class StationsMapState {
       stations: const <StationWithPrices>[],
       franchisesById: const <int, Franchise>{},
       fuelsByCode: const <String, FuelType>{},
+      averagesByFuelCode: const <String, double>{},
       selectedFranchiseIds: const <int>{},
       selectedFuelCodes: const <String>{},
       preferredFuelCode: null,
@@ -51,6 +53,7 @@ class StationsMapState {
   final List<StationWithPrices> stations;
   final Map<int, Franchise> franchisesById;
   final Map<String, FuelType> fuelsByCode;
+  final Map<String, double> averagesByFuelCode;
   final Set<int> selectedFranchiseIds;
   final Set<String> selectedFuelCodes;
   final String? preferredFuelCode;
@@ -93,6 +96,7 @@ class StationsMapState {
     List<StationWithPrices>? stations,
     Map<int, Franchise>? franchisesById,
     Map<String, FuelType>? fuelsByCode,
+    Map<String, double>? averagesByFuelCode,
     Set<int>? selectedFranchiseIds,
     Set<String>? selectedFuelCodes,
     String? preferredFuelCode,
@@ -113,6 +117,7 @@ class StationsMapState {
       stations: stations ?? this.stations,
       franchisesById: franchisesById ?? this.franchisesById,
       fuelsByCode: fuelsByCode ?? this.fuelsByCode,
+      averagesByFuelCode: averagesByFuelCode ?? this.averagesByFuelCode,
       selectedFranchiseIds: selectedFranchiseIds ?? this.selectedFranchiseIds,
       selectedFuelCodes: selectedFuelCodes ?? this.selectedFuelCodes,
         preferredFuelCode: clearPreferredFuelCode

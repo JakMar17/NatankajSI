@@ -83,6 +83,9 @@ class StationsMapCubit extends Cubit<StationsMapState> {
           stations: filteredStations,
           franchisesById: franchisesById,
           fuelsByCode: fuelsByCode,
+          averagesByFuelCode: _computeAveragesByFuelCode(
+            stationsWithCoordinates,
+          ),
           preferredFuelCode: resolvedPreferredFuelCode,
           clearSelectedStation: true,
         ),
@@ -168,6 +171,25 @@ class StationsMapCubit extends Cubit<StationsMapState> {
         clearSelectedStation: hasSelectedStation && !selectedIsVisible,
       ),
     );
+  }
+
+  Map<String, double> _computeAveragesByFuelCode(
+    List<StationWithPrices> stations,
+  ) {
+    final sums = <String, double>{};
+    final counts = <String, int>{};
+
+    for (final station in stations) {
+      for (final entry in station.latestPrices) {
+        final code = entry.fuelCode.trim().toLowerCase();
+        sums[code] = (sums[code] ?? 0) + entry.price;
+        counts[code] = (counts[code] ?? 0) + 1;
+      }
+    }
+
+    return {
+      for (final code in sums.keys) code: sums[code]! / counts[code]!,
+    };
   }
 
   List<StationWithPrices> _filterStations({

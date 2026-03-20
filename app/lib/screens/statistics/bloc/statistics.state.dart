@@ -59,6 +59,7 @@ class FuelStatistics {
     required this.fuelLabel,
     required this.sampleCount,
     required this.stationCount,
+    required this.averagePrice,
     required this.primaryPrice,
     required this.primaryPriceLabel,
     required this.averageDeviation,
@@ -66,12 +67,16 @@ class FuelStatistics {
     required this.closestToUser,
     required this.minPricePoint,
     required this.maxPricePoint,
+    required this.priceDistribution,
   });
 
   final String fuelCode;
   final String fuelLabel;
   final int sampleCount;
   final int stationCount;
+
+  /// True mean across all samples, used for per-station delta comparisons.
+  final double averagePrice;
   final double primaryPrice;
   final String primaryPriceLabel;
   final double averageDeviation;
@@ -80,7 +85,21 @@ class FuelStatistics {
   final StationPricePoint minPricePoint;
   final StationPricePoint maxPricePoint;
 
+  /// Price buckets sorted from lowest to highest price.
+  final List<PriceDistributionBucket> priceDistribution;
+
   double get priceSpread => maxPricePoint.price - minPricePoint.price;
+}
+
+/// A single price bucket: how many stations charge exactly [price].
+class PriceDistributionBucket {
+  const PriceDistributionBucket({
+    required this.price,
+    required this.count,
+  });
+
+  final double price;
+  final int count;
 }
 
 /// Price and location details for one station/fuel data point.

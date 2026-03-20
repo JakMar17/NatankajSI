@@ -18,6 +18,8 @@ class _FuelLocationsStatisticsTab extends StatelessWidget {
         const SizedBox(height: 24),
         _buildMetricCards(context),
         const SizedBox(height: 16),
+        PriceDistributionChart(distribution: statistics.priceDistribution),
+        const SizedBox(height: 16),
         _buildAdditionalInfo(),
       ],
     );

@@ -106,6 +106,7 @@ class _StationsMapView extends StatelessWidget {
                               .selectedStation!
                               .franchiseId],
                     fuelsByCode: state.fuelsByCode,
+                    averagesByFuelCode: state.averagesByFuelCode,
                     preferredFuelCode: state.preferredFuelCode,
                   ),
               ],

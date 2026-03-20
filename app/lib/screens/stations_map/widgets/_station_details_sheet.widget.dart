@@ -5,12 +5,14 @@ class _StationDetailsSheet extends StatelessWidget {
     required this.station,
     required this.franchise,
     required this.fuelsByCode,
+    required this.averagesByFuelCode,
     required this.preferredFuelCode,
   });
 
   final StationWithPrices station;
   final Franchise? franchise;
   final Map<String, FuelType> fuelsByCode;
+  final Map<String, double> averagesByFuelCode;
   final String? preferredFuelCode;
 
   @override
@@ -89,6 +91,9 @@ class _StationDetailsSheet extends StatelessWidget {
                         (price) => _PriceCard(
                           price: price,
                           fuelType: fuelsByCode[price.fuelCode.toLowerCase()],
+                          averagePrice: averagesByFuelCode[
+                            price.fuelCode.trim().toLowerCase()
+                          ],
                         ),
                       ),
                     ),
@@ -306,10 +311,15 @@ class _NavigateHeaderButton extends StatelessWidget {
 }
 
 class _PriceCard extends StatelessWidget {
-  const _PriceCard({required this.price, required this.fuelType});
+  const _PriceCard({
+    required this.price,
+    required this.fuelType,
+    required this.averagePrice,
+  });
 
   final LatestPriceEntry price;
   final FuelType? fuelType;
+  final double? averagePrice;
 
   String get _priceValue => price.price.toStringAsFixed(3);
   String get _title {
@@ -385,11 +395,19 @@ class _PriceCard extends StatelessWidget {
               ],
             ),
           ),
-          Text(
-            '$_priceValue EUR/L',
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            spacing: 4,
+            children: [
+              Text(
+                '$_priceValue EUR/L',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              if (averagePrice != null)
+                PriceDeltaBadge(delta: price.price - averagePrice!),
+            ],
           ),
         ],
       ),

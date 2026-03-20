@@ -151,6 +151,7 @@ class StatisticsCubit extends Cubit<StatisticsState> {
       fuelLabel: fuelLabel,
       sampleCount: samples.length,
       stationCount: distinctStations.length,
+      averagePrice: averagePrice,
       primaryPrice: primaryPriceDetails.price,
       primaryPriceLabel: primaryPriceDetails.label,
       averageDeviation: averageDeviation,
@@ -167,6 +168,7 @@ class StatisticsCubit extends Cubit<StatisticsState> {
         sample: maxSample,
         userLocation: userLocation,
       ),
+      priceDistribution: _buildPriceDistribution(samples),
     );
   }
 
@@ -258,6 +260,31 @@ class StatisticsCubit extends Cubit<StatisticsState> {
     }
 
     return _PrimaryPrice(price: topBucket.price, label: 'Most common price');
+  }
+
+  List<PriceDistributionBucket> _buildPriceDistribution(
+    List<_StationFuelSample> samples,
+  ) {
+    final byPrice = <String, _PriceBucket>{};
+
+    for (final sample in samples) {
+      final key = sample.price.toStringAsFixed(3);
+      final bucket = byPrice[key];
+
+      byPrice[key] = bucket == null
+          ? _PriceBucket(price: sample.price, count: 1)
+          : _PriceBucket(price: bucket.price, count: bucket.count + 1);
+    }
+
+    final buckets =
+        byPrice.values
+            .map(
+              (b) => PriceDistributionBucket(price: b.price, count: b.count),
+            )
+            .toList()
+          ..sort((a, b) => a.price.compareTo(b.price));
+
+    return buckets;
   }
 
   double _calculateAverageDeviation({
