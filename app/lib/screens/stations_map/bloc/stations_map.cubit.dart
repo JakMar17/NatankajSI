@@ -37,7 +37,7 @@ class StationsMapCubit extends Cubit<StationsMapState> {
   static const double _dropdownSelectionZoom = 16;
   static const double _userLocationZoom = 15;
   static const Distance _distance = Distance();
-  static const String _preferredFuelCodeKey =
+  static const String preferredFuelCodeStorageKey =
       'stations_map.preferred_fuel_code';
 
   Future<void> loadData() async {
@@ -62,9 +62,10 @@ class StationsMapCubit extends Cubit<StationsMapState> {
       final fuelsByCode = {
         for (final fuel in fuels) fuel.code.toLowerCase(): fuel,
       };
-      final preferredFuelCode = await _loadPreferredFuelCode();
+      final preferredFuelCode = await readPreferredFuelCode();
       final resolvedPreferredFuelCode =
-          preferredFuelCode != null && fuelsByCode.containsKey(preferredFuelCode)
+          preferredFuelCode != null &&
+              fuelsByCode.containsKey(preferredFuelCode)
           ? preferredFuelCode
           : null;
       final filteredStations = _filterStations(
@@ -88,7 +89,7 @@ class StationsMapCubit extends Cubit<StationsMapState> {
       );
 
       if (preferredFuelCode != resolvedPreferredFuelCode) {
-        await _savePreferredFuelCode(resolvedPreferredFuelCode);
+        await writePreferredFuelCode(resolvedPreferredFuelCode);
       }
 
       await centerOnUserLocation();
@@ -132,7 +133,7 @@ class StationsMapCubit extends Cubit<StationsMapState> {
         clearPreferredFuelCode: normalizedPreferredFuelCode == null,
       ),
     );
-    await _savePreferredFuelCode(normalizedPreferredFuelCode);
+    await writePreferredFuelCode(normalizedPreferredFuelCode);
     _applyFilters();
   }
 
@@ -391,9 +392,10 @@ class StationsMapCubit extends Cubit<StationsMapState> {
     return 9;
   }
 
-  Future<String?> _loadPreferredFuelCode() async {
+  /// Reads preferred fuel code from persistent storage.
+  static Future<String?> readPreferredFuelCode() async {
     final sharedPreferences = await SharedPreferences.getInstance();
-    final savedValue = sharedPreferences.getString(_preferredFuelCodeKey);
+    final savedValue = sharedPreferences.getString(preferredFuelCodeStorageKey);
     final normalizedValue = savedValue?.trim().toLowerCase();
 
     if (normalizedValue == null || normalizedValue.isEmpty) {
@@ -403,14 +405,15 @@ class StationsMapCubit extends Cubit<StationsMapState> {
     return normalizedValue;
   }
 
-  Future<void> _savePreferredFuelCode(String? value) async {
+  /// Writes preferred fuel code to persistent storage.
+  static Future<void> writePreferredFuelCode(String? value) async {
     final sharedPreferences = await SharedPreferences.getInstance();
 
     if (value == null || value.isEmpty) {
-      await sharedPreferences.remove(_preferredFuelCodeKey);
+      await sharedPreferences.remove(preferredFuelCodeStorageKey);
       return;
     }
 
-    await sharedPreferences.setString(_preferredFuelCodeKey, value);
+    await sharedPreferences.setString(preferredFuelCodeStorageKey, value);
   }
 }

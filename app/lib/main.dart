@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:app/data/data.dart';
-import 'package:app/screens/stations_map/stations_map.screen.dart';
+import 'package:app/screens/startup/startup_gate.screen.dart';
 import 'package:app/styles/styles.dart';
 
 const String _apiBaseUrl = String.fromEnvironment(
@@ -41,7 +41,7 @@ class FuelApp extends StatelessWidget {
         title: 'NatankajSI',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.darkGlass,
-        home: const StationsMapScreen(),
+        home: const StartupGateScreen(),
       ),
     );
   }

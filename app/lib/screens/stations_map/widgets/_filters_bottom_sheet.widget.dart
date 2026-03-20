@@ -145,23 +145,17 @@ class _FiltersBottomSheetState extends State<_FiltersBottomSheet> {
                       _FilterSection(
                         title: 'Preferred fuel on marker',
                         child: DropdownButtonFormField<String?>(
-                          value: _preferredFuelCode,
+                          initialValue: _preferredFuelCode,
                           decoration: const InputDecoration(
                             isDense: true,
                             hintText: 'Use default marker fuel',
                           ),
-                          items: [
-                            const DropdownMenuItem<String?>(
-                              value: null,
-                              child: Text('Default (95 or first available)'),
+                          items: widget.fuels.mapToList(
+                            (fuel) => DropdownMenuItem<String?>(
+                              value: fuel.code.toLowerCase(),
+                              child: Text(_fuelLabel(fuel)),
                             ),
-                            ...widget.fuels.mapToList(
-                              (fuel) => DropdownMenuItem<String?>(
-                                value: fuel.code.toLowerCase(),
-                                child: Text(_fuelLabel(fuel)),
-                              ),
-                            ),
-                          ],
+                          ),
                           onChanged: (value) {
                             setState(() {
                               _preferredFuelCode = value;
