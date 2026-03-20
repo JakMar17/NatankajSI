@@ -80,6 +80,7 @@ class _StationsMapView extends StatelessWidget {
                               .selectedStation!
                               .franchiseId],
                     fuelsByCode: state.fuelsByCode,
+                    preferredFuelCode: state.preferredFuelCode,
                   ),
               ],
             ),

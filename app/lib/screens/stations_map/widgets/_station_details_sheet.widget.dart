@@ -5,16 +5,22 @@ class _StationDetailsSheet extends StatelessWidget {
     required this.station,
     required this.franchise,
     required this.fuelsByCode,
+    required this.preferredFuelCode,
   });
 
   final StationWithPrices station;
   final Franchise? franchise;
   final Map<String, FuelType> fuelsByCode;
+  final String? preferredFuelCode;
 
   @override
   Widget build(BuildContext context) {
     final brandName =
         franchise?.name ?? station.franchiseName ?? 'Brand not available';
+    final sortedPrices = _sortStationPricesForCards(
+      station.latestPrices,
+      preferredFuelCode,
+    );
 
     return Align(
       alignment: Alignment.bottomCenter,
@@ -79,7 +85,7 @@ class _StationDetailsSheet extends StatelessWidget {
                     Column(
                       mainAxisSize: .min,
                       spacing: 8,
-                      children: station.latestPrices.mapToList(
+                      children: sortedPrices.mapToList(
                         (price) => _PriceCard(
                           price: price,
                           fuelType: fuelsByCode[price.fuelCode.toLowerCase()],
@@ -117,6 +123,60 @@ class _StationDetailsSheet extends StatelessWidget {
       ),
     );
   }
+}
+
+List<LatestPriceEntry> _sortStationPricesForCards(
+  List<LatestPriceEntry> prices,
+  String? preferredFuelCode,
+) {
+  final normalizedPreferredFuelCode = preferredFuelCode?.trim().toLowerCase();
+  final indexedPrices = prices.indexed.toList();
+
+  indexedPrices.sort((left, right) {
+    final leftPriority = _priceCardPriority(
+      left.$2,
+      normalizedPreferredFuelCode,
+    );
+    final rightPriority = _priceCardPriority(
+      right.$2,
+      normalizedPreferredFuelCode,
+    );
+
+    if (leftPriority != rightPriority) {
+      return leftPriority.compareTo(rightPriority);
+    }
+
+    return left.$1.compareTo(right.$1);
+  });
+
+  return indexedPrices.mapToList((entry) => entry.$2);
+}
+
+int _priceCardPriority(
+  LatestPriceEntry price,
+  String? normalizedPreferredFuelCode,
+) {
+  final normalizedCode = price.fuelCode.trim().toLowerCase();
+  final normalizedName = price.fuelName.trim().toLowerCase();
+
+  if (normalizedPreferredFuelCode != null &&
+      normalizedPreferredFuelCode.isNotEmpty &&
+      normalizedCode == normalizedPreferredFuelCode) {
+    return 0;
+  }
+
+  if (normalizedCode.contains('95') || normalizedName.contains('95')) {
+    return 1;
+  }
+
+  final isRegularDieselCode = normalizedCode == 'dizel';
+  final isRegularDieselName =
+      normalizedName.contains('dizel') && !normalizedName.contains('premium');
+  if (isRegularDieselCode || isRegularDieselName) {
+    return 2;
+  }
+
+  return 3;
 }
 
 class _SheetHandle extends StatelessWidget {
@@ -276,11 +336,13 @@ class _PriceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = FuelCardPalette.fromCode(fuelType?.code ?? price.fuelCode);
+
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0x3340D9FF), Color(0x337BFFD9)],
+        gradient: LinearGradient(
+          colors: [palette.startColor, palette.endColor],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -298,10 +360,10 @@ class _PriceCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(10),
             ),
             alignment: Alignment.center,
-            child: const Icon(
+            child: Icon(
               Icons.local_gas_station_outlined,
               size: 18,
-              color: AppColors.accentMint,
+              color: palette.iconColor,
             ),
           ),
           Expanded(

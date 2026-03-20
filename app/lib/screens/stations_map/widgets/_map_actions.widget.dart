@@ -239,7 +239,8 @@ class _MapActionButton extends StatelessWidget {
         ),
         splashRadius: 22,
         icon: Stack(
-          clipBehavior: Clip.none,
+          clipBehavior: .none,
+          alignment: .center,
           children: [
             SizedBox(
               width: _iconSize,
