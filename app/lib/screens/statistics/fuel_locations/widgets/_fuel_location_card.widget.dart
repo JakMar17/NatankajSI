@@ -10,7 +10,7 @@ class _LocationCard extends StatelessWidget {
 
   final FuelLocationItem item;
   final String fuelCode;
-  final double averagePrice;
+  final double? averagePrice;
   final VoidCallback onPressed;
 
   bool get _hasDistance => item.distanceKm != null;
@@ -89,7 +89,8 @@ class _LocationCard extends StatelessWidget {
                       fontWeight: FontWeight.w800,
                     ),
                   ),
-                  PriceDeltaBadge(delta: item.price - averagePrice),
+                  if (averagePrice != null)
+                    PriceDeltaBadge(delta: item.price - averagePrice!),
                 ],
               ),
             ],

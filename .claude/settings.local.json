@@ -36,7 +36,12 @@
       "Bash(python3 -c \"import json,sys; data=json.load\\(sys.stdin\\); print\\(json.dumps\\(data[0], indent=2\\)\\)\" echo \"=== prices/latest \\(first 2\\) ===\")",
       "Bash(python3 -c \"import json,sys; data=json.load\\(sys.stdin\\); print\\(json.dumps\\(data[:2], indent=2\\)\\)\")",
       "Bash(python3 -m json.tool echo \"=== station price history \\(limit 3 with fuel filter\\) ===\")",
-      "Bash(/Users/jakob/Documents/01-projects/10-goriva_parser/goriva-parser/app/api/v1/prices.py:*)"
+      "Bash(/Users/jakob/Documents/01-projects/10-goriva_parser/goriva-parser/app/api/v1/prices.py:*)",
+      "WebFetch(domain:iskalnik.mol.si)",
+      "Bash(sqlite3:*)",
+      "Bash(grep -o 'api\\\\.php.\\\\{0,200\\\\}')",
+      "Bash(grep -o 'api\\\\.\\\\{0,300\\\\}')",
+      "Bash(python3 -c \":*)"
     ]
   }
 }

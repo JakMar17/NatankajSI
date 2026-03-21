@@ -3,13 +3,11 @@ part of "../fuel_locations.screen.dart";
 class _FuelLocationsLoadedView extends StatelessWidget {
   final String fuelCode;
   final String fuelLabel;
-  final FuelStatistics statistics;
   final ValueChanged<int> onStationPressed;
 
   const _FuelLocationsLoadedView({
     required this.fuelCode,
     required this.fuelLabel,
-    required this.statistics,
     required this.onStationPressed,
   });
 
@@ -33,7 +31,7 @@ class _FuelLocationsLoadedView extends StatelessWidget {
             child: TabBarView(
               children: [
                 _FuelLocationsStatisticsTab(
-                  statistics: statistics,
+                  statistics: state.statistics,
                   onStationPressed: onStationPressed,
                 ),
                 _buildLocationsTab(state),
@@ -54,7 +52,10 @@ class _FuelLocationsLoadedView extends StatelessWidget {
         ),
         state.visibleItems.isEmpty
             ? _buildEmptyResults()
-            : _buildResultsList(state.visibleItems),
+            : _buildResultsList(
+                state.visibleItems,
+                averagePrice: state.statistics?.averagePrice,
+              ),
       ],
     );
   }
@@ -70,7 +71,10 @@ class _FuelLocationsLoadedView extends StatelessWidget {
     );
   }
 
-  Widget _buildResultsList(List<FuelLocationItem> items) {
+  Widget _buildResultsList(
+    List<FuelLocationItem> items, {
+    required double? averagePrice,
+  }) {
     return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -83,7 +87,7 @@ class _FuelLocationsLoadedView extends StatelessWidget {
         return _LocationCard(
           item: item,
           fuelCode: fuelCode,
-          averagePrice: statistics.averagePrice,
+          averagePrice: averagePrice,
           onPressed: () {
             onStationPressed(item.stationPk);
             Navigator.of(context).pop();

@@ -1,3 +1,5 @@
+import 'package:app/screens/statistics/bloc/statistics.state.dart';
+
 /// Loading state for fuel location list screen.
 enum FuelLocationsStatus { loading, ready, error }
 
@@ -35,6 +37,7 @@ class FuelLocationsState {
     required this.isAscending,
     required this.allItems,
     required this.visibleItems,
+    required this.statistics,
   });
 
   factory FuelLocationsState.initial() {
@@ -46,6 +49,7 @@ class FuelLocationsState {
       isAscending: true,
       allItems: <FuelLocationItem>[],
       visibleItems: <FuelLocationItem>[],
+      statistics: null,
     );
   }
 
@@ -56,6 +60,7 @@ class FuelLocationsState {
   final bool isAscending;
   final List<FuelLocationItem> allItems;
   final List<FuelLocationItem> visibleItems;
+  final FuelStatistics? statistics;
 
   FuelLocationsState copyWith({
     FuelLocationsStatus? status,
@@ -66,6 +71,8 @@ class FuelLocationsState {
     bool? isAscending,
     List<FuelLocationItem>? allItems,
     List<FuelLocationItem>? visibleItems,
+    FuelStatistics? statistics,
+    bool clearStatistics = false,
   }) {
     return FuelLocationsState(
       status: status ?? this.status,
@@ -77,6 +84,7 @@ class FuelLocationsState {
       isAscending: isAscending ?? this.isAscending,
       allItems: allItems ?? this.allItems,
       visibleItems: visibleItems ?? this.visibleItems,
+      statistics: clearStatistics ? null : (statistics ?? this.statistics),
     );
   }
 }

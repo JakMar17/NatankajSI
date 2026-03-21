@@ -19,14 +19,12 @@ part 'widgets/_fuel_search.widget.dart';
 class FuelLocationsScreen extends StatelessWidget {
   final String fuelCode;
   final String fuelLabel;
-  final FuelStatistics statistics;
   final ValueChanged<int> onStationPressed;
 
   const FuelLocationsScreen({
     super.key,
     required this.fuelCode,
     required this.fuelLabel,
-    required this.statistics,
     required this.onStationPressed,
   });
 
@@ -35,7 +33,7 @@ class FuelLocationsScreen extends StatelessWidget {
     return BlocProvider<FuelLocationsCubit>(
       create: (context) => FuelLocationsCubit(
         stationsApiService: context.read<StationsApiService>(),
-      )..load(fuelCode: fuelCode),
+      )..load(fuelCode: fuelCode, fuelLabel: fuelLabel),
       child: DecoratedBox(
         decoration: const BoxDecoration(gradient: AppGradients.appBackground),
         child: Scaffold(
@@ -47,15 +45,15 @@ class FuelLocationsScreen extends StatelessWidget {
                 .error => _buildErrorState(
                   context,
                   message: state.errorMessage ?? 'Could not load fuel locations.',
-                  onRetry: () =>
-                    context.read<FuelLocationsCubit>().load(fuelCode: fuelCode),
+                  onRetry: () => context
+                      .read<FuelLocationsCubit>()
+                      .load(fuelCode: fuelCode, fuelLabel: fuelLabel),
                 ),
                 .ready => _FuelLocationsLoadedView(
                   fuelCode: fuelCode,
                   fuelLabel: fuelLabel,
-                  statistics: statistics,
                   onStationPressed: onStationPressed,
-                )
+                ),
               },
             ),
           ),

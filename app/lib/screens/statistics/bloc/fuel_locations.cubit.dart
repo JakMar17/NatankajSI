@@ -5,6 +5,7 @@ import 'package:latlong2/latlong.dart';
 
 import 'package:app/data/data.dart';
 import 'package:app/screens/statistics/bloc/fuel_locations.state.dart';
+import 'package:app/screens/statistics/bloc/statistics.state.dart';
 
 /// Loads stations for one fuel type and supports local search/sort.
 class FuelLocationsCubit extends Cubit<FuelLocationsState> {
@@ -15,8 +16,12 @@ class FuelLocationsCubit extends Cubit<FuelLocationsState> {
   final StationsApiService _stationsApiService;
 
   static const Distance _distance = Distance();
+  static const int _modeMinimumStations = 10;
 
-  Future<void> load({required String fuelCode}) async {
+  Future<void> load({
+    required String fuelCode,
+    required String fuelLabel,
+  }) async {
     emit(
       state.copyWith(
         status: FuelLocationsStatus.loading,
@@ -72,6 +77,13 @@ class FuelLocationsCubit extends Cubit<FuelLocationsState> {
           searchQuery: '',
           orderBy: FuelLocationsOrderBy.distance,
           isAscending: true,
+          statistics: allItems.isNotEmpty
+              ? _computeStatistics(
+                  fuelCode: normalizedFuelCode,
+                  fuelLabel: fuelLabel,
+                  items: allItems,
+                )
+              : null,
         ),
       );
       _applyFilters();
@@ -83,6 +95,93 @@ class FuelLocationsCubit extends Cubit<FuelLocationsState> {
         ),
       );
     }
+  }
+
+  FuelStatistics _computeStatistics({
+    required String fuelCode,
+    required String fuelLabel,
+    required List<FuelLocationItem> items,
+  }) {
+    final sum = items.fold<double>(0, (v, item) => v + item.price);
+    final averagePrice = sum / items.length;
+    final averageDeviation = items.fold<double>(
+          0,
+          (v, item) => v + (item.price - averagePrice).abs(),
+        ) /
+        items.length;
+    final averageDeviationPercent = averagePrice == 0
+        ? 0.0
+        : (averageDeviation / averagePrice) * 100.0;
+
+    var minItem = items.first;
+    var maxItem = items.first;
+    var closestItem = items.first;
+
+    for (final item in items) {
+      if (item.price < minItem.price) minItem = item;
+      if (item.price > maxItem.price) maxItem = item;
+      final itemDist = item.distanceKm;
+      final closestDist = closestItem.distanceKm;
+      if (itemDist != null &&
+          (closestDist == null || itemDist < closestDist)) {
+        closestItem = item;
+      }
+    }
+
+    final byPrice = <String, ({double price, int count})>{};
+    for (final item in items) {
+      final key = item.price.toStringAsFixed(3);
+      final bucket = byPrice[key];
+      byPrice[key] = bucket == null
+          ? (price: item.price, count: 1)
+          : (price: bucket.price, count: bucket.count + 1);
+    }
+
+    final stationCount = items.map((i) => i.stationPk).toSet().length;
+    ({double price, String label}) primaryPrice;
+
+    if (stationCount > _modeMinimumStations) {
+      final top = byPrice.values.reduce(
+        (a, b) => a.count >= b.count ? a : b,
+      );
+      primaryPrice = top.count >= 2
+          ? (price: top.price, label: 'Most common price')
+          : (price: averagePrice, label: 'Average price');
+    } else {
+      primaryPrice = (price: averagePrice, label: 'Average price');
+    }
+
+    final distribution =
+        byPrice.values
+            .map(
+              (b) => PriceDistributionBucket(price: b.price, count: b.count),
+            )
+            .toList()
+          ..sort((a, b) => a.price.compareTo(b.price));
+
+    StationPricePoint toPoint(FuelLocationItem item) => StationPricePoint(
+      stationPk: item.stationPk,
+      stationName: item.stationName,
+      stationAddress: item.stationAddress,
+      price: item.price,
+      distanceKm: item.distanceKm,
+    );
+
+    return FuelStatistics(
+      fuelCode: fuelCode,
+      fuelLabel: fuelLabel,
+      sampleCount: items.length,
+      stationCount: stationCount,
+      averagePrice: averagePrice,
+      primaryPrice: primaryPrice.price,
+      primaryPriceLabel: primaryPrice.label,
+      averageDeviation: averageDeviation,
+      averageDeviationPercent: averageDeviationPercent,
+      closestToUser: toPoint(closestItem),
+      minPricePoint: toPoint(minItem),
+      maxPricePoint: toPoint(maxItem),
+      priceDistribution: distribution,
+    );
   }
 
   void setSearchQuery(String query) {

@@ -44,6 +44,7 @@ class Station(Base):
 
     franchise: Mapped["Franchise | None"] = relationship(back_populates="stations")
     price_snapshots: Mapped[list["PriceSnapshot"]] = relationship(back_populates="station")
+    mol_station: Mapped["MolStation | None"] = relationship(back_populates="station")
 
 
 class PriceSnapshot(Base):
@@ -67,3 +68,101 @@ class FetchLog(Base):
     completed_at: Mapped[datetime | None] = mapped_column(DateTime)
     stations_fetched: Mapped[int | None] = mapped_column(Integer)
     status: Mapped[str] = mapped_column(String(50), nullable=False, default="running")
+
+
+# ── MOL reference tables ──────────────────────────────────────────────────────
+
+class MolServiceType(Base):
+    __tablename__ = "mol_service_type"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    code: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+
+    station_services: Mapped[list["MolStationService"]] = relationship(back_populates="service_type")
+
+
+class MolCardType(Base):
+    __tablename__ = "mol_card_type"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    code: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+
+    station_cards: Mapped[list["MolStationCard"]] = relationship(back_populates="card_type")
+
+
+class MolGastroCategory(Base):
+    __tablename__ = "mol_gastro_category"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    code: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+
+    station_gastros: Mapped[list["MolStationGastro"]] = relationship(back_populates="gastro_category")
+
+
+# ── MOL station ───────────────────────────────────────────────────────────────
+
+class MolStation(Base):
+    __tablename__ = "mol_station"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    station_id: Mapped[int] = mapped_column(ForeignKey("station.pk"), unique=True, nullable=False)
+    mol_code: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
+    company: Mapped[str | None] = mapped_column(String(200))
+    brand: Mapped[str | None] = mapped_column(String(100))
+    name: Mapped[str | None] = mapped_column(String(200))
+    street_address: Mapped[str | None] = mapped_column(String(500))
+    city: Mapped[str | None] = mapped_column(String(200))
+    postcode: Mapped[str | None] = mapped_column(String(20))
+    lat: Mapped[float | None] = mapped_column(Float)
+    lng: Mapped[float | None] = mapped_column(Float)
+    status: Mapped[str | None] = mapped_column(String(20))
+    shop_size: Mapped[int | None] = mapped_column(Integer)
+    num_of_pos: Mapped[int | None] = mapped_column(Integer)
+    last_synced_at: Mapped[datetime | None] = mapped_column(DateTime)
+
+    station: Mapped["Station"] = relationship(back_populates="mol_station")
+    services: Mapped[list["MolStationService"]] = relationship(
+        back_populates="mol_station", cascade="all, delete-orphan"
+    )
+    cards: Mapped[list["MolStationCard"]] = relationship(
+        back_populates="mol_station", cascade="all, delete-orphan"
+    )
+    gastro: Mapped[list["MolStationGastro"]] = relationship(
+        back_populates="mol_station", cascade="all, delete-orphan"
+    )
+
+
+# ── MOL junction tables ───────────────────────────────────────────────────────
+
+class MolStationService(Base):
+    __tablename__ = "mol_station_service"
+
+    mol_station_id: Mapped[int] = mapped_column(ForeignKey("mol_station.id"), primary_key=True)
+    service_type_id: Mapped[int] = mapped_column(ForeignKey("mol_service_type.id"), primary_key=True)
+    value: Mapped[str | None] = mapped_column(String(200))
+
+    mol_station: Mapped["MolStation"] = relationship(back_populates="services")
+    service_type: Mapped["MolServiceType"] = relationship(back_populates="station_services")
+
+
+class MolStationCard(Base):
+    __tablename__ = "mol_station_card"
+
+    mol_station_id: Mapped[int] = mapped_column(ForeignKey("mol_station.id"), primary_key=True)
+    card_type_id: Mapped[int] = mapped_column(ForeignKey("mol_card_type.id"), primary_key=True)
+
+    mol_station: Mapped["MolStation"] = relationship(back_populates="cards")
+    card_type: Mapped["MolCardType"] = relationship(back_populates="station_cards")
+
+
+class MolStationGastro(Base):
+    __tablename__ = "mol_station_gastro"
+
+    mol_station_id: Mapped[int] = mapped_column(ForeignKey("mol_station.id"), primary_key=True)
+    gastro_category_id: Mapped[int] = mapped_column(ForeignKey("mol_gastro_category.id"), primary_key=True)
+
+    mol_station: Mapped["MolStation"] = relationship(back_populates="gastro")
+    gastro_category: Mapped["MolGastroCategory"] = relationship(back_populates="station_gastros")

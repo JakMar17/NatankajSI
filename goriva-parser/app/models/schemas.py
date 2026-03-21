@@ -53,9 +53,48 @@ class LatestPriceEntry(_Base):
     fetched_at: datetime
 
 
+# ── MOL schemas ───────────────────────────────────────────────────────────────
+
+class MolServiceSchema(_Base):
+    code: str
+    name: str
+    value: str | None
+
+
+class MolCardSchema(_Base):
+    code: str
+    name: str
+
+
+class MolGastroCategorySchema(_Base):
+    code: str
+    name: str
+
+
+class MolDataSchema(_Base):
+    mol_code: str
+    company: str | None
+    brand: str | None
+    name: str | None
+    address: str | None
+    city: str | None
+    postcode: str | None
+    lat: float | None
+    lng: float | None
+    status: str | None
+    shop_size: int | None
+    num_of_pos: int | None
+    services: list[MolServiceSchema]
+    cards: list[MolCardSchema]
+    gastro: list[MolGastroCategorySchema]
+
+
+# ── Station response schemas ──────────────────────────────────────────────────
+
 class StationWithPrices(StationSchema):
     franchise_name: str | None
     latest_prices: list[LatestPriceEntry]
+    mol: MolDataSchema | None = None
 
 
 class PriceEntry(_Base):
@@ -75,6 +114,7 @@ class StationPrices(_Base):
     franchise_id: int | None
     franchise_name: str | None
     prices: list[PriceEntry]
+    mol: MolDataSchema | None = None
 
 
 class PricesResponse(_Base):

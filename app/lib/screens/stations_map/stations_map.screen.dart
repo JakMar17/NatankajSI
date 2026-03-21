@@ -10,6 +10,7 @@ import 'package:latlong2/latlong.dart';
 
 import 'package:app/screens/stations_map/bloc/stations_map.cubit.dart';
 import 'package:app/screens/stations_map/bloc/stations_map.state.dart';
+import 'package:app/screens/statistics/fuel_locations/fuel_locations.screen.dart';
 import 'package:app/data/data.dart';
 import 'package:app/styles/styles.dart';
 import 'package:app/widgets/base/base.dart';

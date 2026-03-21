@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.v1.helpers import load_mol_map
 from app.database import get_session
 from app.models.orm import Franchise, FuelType, PriceSnapshot, Station
 from app.models.schemas import PriceEntry, PricesResponse, StationPrices
@@ -68,7 +69,10 @@ async def get_prices(
             )
         prices_map[row.pk].append(PriceEntry(fuel_code=row.fuel_code, fuel_name=row.fuel_name, price=row.price))
 
+    mol_map = await load_mol_map(session, list(station_map.keys()))
+
     for pk, station in station_map.items():
         station.prices = prices_map[pk]
+        station.mol = mol_map.get(pk)
 
     return PricesResponse(fetched_at=target_ts, stations=list(station_map.values()))

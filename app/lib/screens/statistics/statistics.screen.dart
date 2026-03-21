@@ -179,7 +179,6 @@ class _FuelStatisticsCard extends StatelessWidget {
         builder: (_) => FuelLocationsScreen(
           fuelCode: statistics.fuelCode,
           fuelLabel: statistics.fuelLabel,
-          statistics: statistics,
           onStationPressed: onStationPressed,
         ),
       ),

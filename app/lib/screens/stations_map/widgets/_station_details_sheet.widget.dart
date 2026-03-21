@@ -15,6 +15,27 @@ class _StationDetailsSheet extends StatelessWidget {
   final Map<String, double> averagesByFuelCode;
   final String? preferredFuelCode;
 
+  void _openFuelLocations(
+    BuildContext context, {
+    required LatestPriceEntry price,
+    required FuelType? fuelType,
+  }) {
+    final cubit = context.read<StationsMapCubit>();
+    final fuelLabel = fuelType?.longName?.trim().isNotEmpty == true
+        ? fuelType!.longName!.trim()
+        : price.fuelName;
+
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => FuelLocationsScreen(
+          fuelCode: price.fuelCode.trim().toLowerCase(),
+          fuelLabel: fuelLabel,
+          onStationPressed: (pk) => cubit.selectStationByPk(pk),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final brandName =
@@ -94,6 +115,13 @@ class _StationDetailsSheet extends StatelessWidget {
                           averagePrice: averagesByFuelCode[
                             price.fuelCode.trim().toLowerCase()
                           ],
+                          onPressed: () => _openFuelLocations(
+                            context,
+                            price: price,
+                            fuelType: fuelsByCode[
+                              price.fuelCode.toLowerCase()
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -315,11 +343,13 @@ class _PriceCard extends StatelessWidget {
     required this.price,
     required this.fuelType,
     required this.averagePrice,
+    required this.onPressed,
   });
 
   final LatestPriceEntry price;
   final FuelType? fuelType;
   final double? averagePrice;
+  final VoidCallback onPressed;
 
   String get _priceValue => price.price.toStringAsFixed(3);
   String get _title {
@@ -348,18 +378,23 @@ class _PriceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = FuelCardPalette.fromCode(fuelType?.code ?? price.fuelCode);
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [palette.startColor, palette.endColor],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onPressed,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.glassStroke),
-      ),
-      child: Row(
+        child: Ink(
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [palette.startColor, palette.endColor],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.glassStroke),
+          ),
+          child: Row(
         spacing: 12,
         children: [
           Container(
@@ -410,6 +445,8 @@ class _PriceCard extends StatelessWidget {
             ],
           ),
         ],
+        ),
+        ),
       ),
     );
   }

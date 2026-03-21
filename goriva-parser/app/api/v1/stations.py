@@ -5,6 +5,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.api.v1.helpers import load_mol_map
 from app.database import get_session
 from app.models.orm import Franchise, FuelType, PriceSnapshot, Station
 from app.models.schemas import (
@@ -59,6 +60,8 @@ async def list_stations(session: AsyncSession = Depends(get_session)):
     )
     stations = result.scalars().all()
 
+    mol_map = await load_mol_map(session, [s.pk for s in stations])
+
     out = []
     for s in stations:
         prices = await _get_latest_prices_for_station(session, s.pk)
@@ -74,6 +77,7 @@ async def list_stations(session: AsyncSession = Depends(get_session)):
                 open_hours=s.open_hours,
                 franchise_name=s.franchise.name if s.franchise else None,
                 latest_prices=prices,
+                mol=mol_map.get(s.pk),
             )
         )
     return out
@@ -89,6 +93,7 @@ async def get_station(pk: int, session: AsyncSession = Depends(get_session)):
         raise HTTPException(status_code=404, detail="Station not found")
 
     prices = await _get_latest_prices_for_station(session, pk)
+    mol_map = await load_mol_map(session, [pk])
     return StationWithPrices(
         pk=station.pk,
         franchise_id=station.franchise_id,
@@ -100,6 +105,7 @@ async def get_station(pk: int, session: AsyncSession = Depends(get_session)):
         open_hours=station.open_hours,
         franchise_name=station.franchise.name if station.franchise else None,
         latest_prices=prices,
+        mol=mol_map.get(pk),
     )
 
 

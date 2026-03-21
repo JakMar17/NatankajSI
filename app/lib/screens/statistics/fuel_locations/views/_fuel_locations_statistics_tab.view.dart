@@ -6,21 +6,35 @@ class _FuelLocationsStatisticsTab extends StatelessWidget {
     required this.onStationPressed,
   });
 
-  final FuelStatistics statistics;
+  final FuelStatistics? statistics;
   final ValueChanged<int> onStationPressed;
 
   @override
   Widget build(BuildContext context) {
+    final stats = statistics;
+    if (stats == null) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: Text(
+            'Statistics not available.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: AppColors.textBodyMedium),
+          ),
+        ),
+      );
+    }
+
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
       children: [
-        _StatPriceHeader(statistics: statistics),
+        _StatPriceHeader(statistics: stats),
         const SizedBox(height: 24),
-        _buildMetricCards(context),
+        _buildMetricCards(context, stats),
         const SizedBox(height: 16),
-        PriceDistributionChart(distribution: statistics.priceDistribution),
+        PriceDistributionChart(distribution: stats.priceDistribution),
         const SizedBox(height: 16),
-        _buildAdditionalInfo(),
+        _buildAdditionalInfo(stats),
       ],
     );
   }
@@ -30,59 +44,59 @@ class _FuelLocationsStatisticsTab extends StatelessWidget {
     Navigator.of(context).pop();
   }
 
-  Widget _buildMetricCards(BuildContext context) {
+  Widget _buildMetricCards(BuildContext context, FuelStatistics stats) {
     return Column(
       spacing: 10,
       children: [
         _StatMetricRow(
           label: 'Nearest to me',
-          point: statistics.closestToUser,
+          point: stats.closestToUser,
           icon: Icons.near_me_rounded,
           onPressed: () => _onStationTapped(
             context,
-            statistics.closestToUser.stationPk,
+            stats.closestToUser.stationPk,
           ),
         ),
         _StatMetricRow(
           label: 'Cheapest station',
-          point: statistics.minPricePoint,
+          point: stats.minPricePoint,
           icon: Icons.south_rounded,
           onPressed: () => _onStationTapped(
             context,
-            statistics.minPricePoint.stationPk,
+            stats.minPricePoint.stationPk,
           ),
         ),
         _StatMetricRow(
           label: 'Most expensive station',
-          point: statistics.maxPricePoint,
+          point: stats.maxPricePoint,
           icon: Icons.north_rounded,
           onPressed: () => _onStationTapped(
             context,
-            statistics.maxPricePoint.stationPk,
+            stats.maxPricePoint.stationPk,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildAdditionalInfo() {
+  Widget _buildAdditionalInfo(FuelStatistics stats) {
     return Column(
       children: [
         _StatSummaryRow(
           label: 'Price range',
-          value: '${statistics.priceSpread.toStringAsFixed(3)} EUR',
+          value: '${stats.priceSpread.toStringAsFixed(3)} EUR',
         ),
         _StatSummaryRow(
           label: 'Typical variation',
           value:
-              '${statistics.averageDeviation.toStringAsFixed(3)} EUR '
-              '(${statistics.averageDeviationPercent.toStringAsFixed(1)}%)',
+              '${stats.averageDeviation.toStringAsFixed(3)} EUR '
+              '(${stats.averageDeviationPercent.toStringAsFixed(1)}%)',
         ),
         _StatSummaryRow(
           label: 'Coverage',
           value:
-              '${statistics.stationCount} stations, '
-              '${statistics.sampleCount} prices',
+              '${stats.stationCount} stations, '
+              '${stats.sampleCount} prices',
         ),
       ],
     );
