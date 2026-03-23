@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel
@@ -120,6 +120,13 @@ class StationPrices(_Base):
 class PricesResponse(_Base):
     fetched_at: datetime
     stations: list[StationPrices]
+
+
+class RegulatedPriceSchema(_Base):
+    pk: int
+    valid_from: date
+    petrol_price: float | None
+    diesel_price: float | None
 
 
 class FetchLogSchema(_Base):

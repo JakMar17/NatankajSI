@@ -27,6 +27,12 @@ async def _do_mol_sync() -> None:
         await sync_mol_stations(session)
 
 
+async def _do_regulated_prices_sync() -> None:
+    from app.fetcher.regulated_prices_ingest import sync_regulated_prices
+    async with async_session() as session:
+        await sync_regulated_prices(session)
+
+
 async def _is_stale() -> bool:
     """Return True if there's no recent successful fetch within the interval."""
     async with async_session() as session:
@@ -63,12 +69,18 @@ async def start_scheduler() -> None:
         IntervalTrigger(hours=24),
         id="daily_mol_sync",
     )
+    await _scheduler.add_schedule(
+        _do_regulated_prices_sync,
+        IntervalTrigger(hours=24),
+        id="daily_regulated_prices",
+    )
 
     if await _is_stale():
         logger.info("Data is stale — triggering immediate fetch in background")
         asyncio.create_task(_do_fetch())
 
     asyncio.create_task(_do_mol_sync())
+    asyncio.create_task(_do_regulated_prices_sync())
     logger.info("Scheduler started (interval=%dh)", settings.fetch_interval_hours)
 
 

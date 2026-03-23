@@ -147,6 +147,10 @@ class _StationDetailsSheet extends StatelessWidget {
                             : '',
                       ],
                     ),
+                    if (station.mol != null) ...[
+                      const SizedBox(height: 8),
+                      _MolInfoSection(mol: station.mol!),
+                    ],
                   ],
                 ),
               ),
@@ -520,6 +524,128 @@ class _InfoCard extends StatelessWidget {
                 context,
               ).textTheme.bodyMedium?.copyWith(color: AppColors.textBodyMedium),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MolInfoSection extends StatelessWidget {
+  const _MolInfoSection({required this.mol});
+
+  final MolData mol;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasContent = mol.services.isNotEmpty ||
+        mol.cards.isNotEmpty ||
+        mol.gastro.isNotEmpty;
+
+    if (!hasContent) return const SizedBox.shrink();
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      spacing: 8,
+      children: [
+        if (mol.services.isNotEmpty)
+          _MolChipCard(
+            title: 'Services',
+            icon: Icons.room_service_outlined,
+            items: mol.services.map((s) => s.name).toList(),
+          ),
+        if (mol.cards.isNotEmpty)
+          _MolChipCard(
+            title: 'Accepted cards',
+            icon: Icons.credit_card_outlined,
+            items: mol.cards.map((c) => c.name).toList(),
+          ),
+        if (mol.gastro.isNotEmpty)
+          _MolChipCard(
+            title: 'Food & drinks',
+            icon: Icons.restaurant_outlined,
+            items: mol.gastro.map((g) => g.name).toList(),
+          ),
+      ],
+    );
+  }
+}
+
+class _MolChipCard extends StatelessWidget {
+  const _MolChipCard({
+    required this.title,
+    required this.icon,
+    required this.items,
+  });
+
+  final String title;
+  final IconData icon;
+  final List<String> items;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0x1F40D9FF), Color(0x1F7BFFD9)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.glassStroke),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: 10,
+        children: [
+          Row(
+            spacing: 10,
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: const Color(0x29000000),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                alignment: Alignment.center,
+                child: Icon(icon, size: 24, color: AppColors.accentMint),
+              ),
+              Text(
+                title,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: AppColors.textBodyHigh,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: items
+                .map(
+                  (item) => Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.glassFill,
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(color: AppColors.glassStroke),
+                    ),
+                    child: Text(
+                      item,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.textBodyMedium,
+                      ),
+                    ),
+                  ),
+                )
+                .toList(),
+          ),
         ],
       ),
     );

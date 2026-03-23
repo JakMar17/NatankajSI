@@ -13,4 +13,5 @@ dependencies = [
     "pydantic-settings>=2.13.1",
     "sqlalchemy[asyncio]>=2.0.48",
     "uvicorn[standard]>=0.42.0",
+    "beautifulsoup4>=4.12.0",
 ]

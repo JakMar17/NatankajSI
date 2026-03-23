@@ -1,4 +1,5 @@
 import 'package:app/data/models/latest_price_entry.model.dart';
+import 'package:app/data/models/mol_data.model.dart';
 import 'package:dart_util_box/dart_util_box.dart';
 
 /// A station with its latest known prices.
@@ -14,6 +15,7 @@ class StationWithPrices {
     required this.openHours,
     required this.franchiseName,
     required this.latestPrices,
+    required this.mol,
   });
 
   final int pk;
@@ -26,6 +28,7 @@ class StationWithPrices {
   final String? openHours;
   final String? franchiseName;
   final List<LatestPriceEntry> latestPrices;
+  final MolData? mol;
 
   factory StationWithPrices.fromJson(Map<String, dynamic> json) {
     final latestPricesJson = json['latestPrices'] as List<dynamic>;
@@ -46,6 +49,9 @@ class StationWithPrices {
               entry as Map<String, dynamic>,
             ),
           ),
+      mol: json['mol'] == null
+          ? null
+          : MolData.fromJson(json['mol'] as Map<String, dynamic>),
     );
   }
 }

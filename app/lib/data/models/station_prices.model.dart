@@ -1,3 +1,4 @@
+import 'package:app/data/models/mol_data.model.dart';
 import 'package:app/data/models/price_entry.model.dart';
 import 'package:dart_util_box/dart_util_box.dart';
 
@@ -14,6 +15,7 @@ class StationPrices {
     required this.franchiseId,
     required this.franchiseName,
     required this.prices,
+    required this.mol,
   });
 
   final int pk;
@@ -26,6 +28,7 @@ class StationPrices {
   final int? franchiseId;
   final String? franchiseName;
   final List<PriceEntry> prices;
+  final MolData? mol;
 
   factory StationPrices.fromJson(Map<String, dynamic> json) {
     final pricesJson = json['prices'] as List<dynamic>;
@@ -41,7 +44,12 @@ class StationPrices {
       franchiseId: json['franchiseId'] as int?,
       franchiseName: json['franchiseName'] as String?,
       prices: pricesJson
-          .mapToList((entry) => PriceEntry.fromJson(entry as Map<String, dynamic>)),
+          .mapToList(
+            (entry) => PriceEntry.fromJson(entry as Map<String, dynamic>),
+          ),
+      mol: json['mol'] == null
+          ? null
+          : MolData.fromJson(json['mol'] as Map<String, dynamic>),
     );
   }
 }

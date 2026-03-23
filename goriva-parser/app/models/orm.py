@@ -1,6 +1,6 @@
-from datetime import datetime
+from datetime import date, datetime
 
-from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import Date, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -58,6 +58,15 @@ class PriceSnapshot(Base):
 
     station: Mapped["Station"] = relationship(back_populates="price_snapshots")
     fuel_type: Mapped["FuelType"] = relationship(back_populates="price_snapshots")
+
+
+class RegulatedPrice(Base):
+    __tablename__ = "regulated_price"
+
+    pk: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    valid_from: Mapped[date] = mapped_column(Date, unique=True, nullable=False, index=True)
+    petrol_price: Mapped[float | None] = mapped_column(Float)
+    diesel_price: Mapped[float | None] = mapped_column(Float)
 
 
 class FetchLog(Base):
