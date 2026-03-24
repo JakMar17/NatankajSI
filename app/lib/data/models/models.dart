@@ -1,4 +1,5 @@
 export 'fetch_log.model.dart';
+export 'regulated_price.model.dart';
 export 'franchise.model.dart';
 export 'fuel_type.model.dart';
 export 'http_validation_error.model.dart';
