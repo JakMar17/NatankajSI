@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:app/data/data.dart';
+import 'package:app/screens/more/more.screen.dart';
 import 'package:app/screens/stations_map/bloc/stations_map.cubit.dart';
 import 'package:app/screens/stations_map/stations_map.screen.dart';
 import 'package:app/screens/statistics/statistics.screen.dart';
@@ -62,7 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
         onStationSelectionChanged: _onStationSelectionChanged,
       ),
       StatisticsScreen(onStationPressed: _onStatisticsStationPressed),
-      const _MorePlaceholderView(),
+      MoreScreen(onStationPressed: _onStatisticsStationPressed),
     ];
 
     return DecoratedBox(
@@ -101,71 +102,3 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class _MorePlaceholderView extends StatelessWidget {
-  const _MorePlaceholderView();
-
-  @override
-  Widget build(BuildContext context) {
-    return const _TabPlaceholder(
-      icon: Icons.grid_view_rounded,
-      title: 'More',
-      subtitle: 'Choose this tab name later',
-    );
-  }
-}
-
-class _TabPlaceholder extends StatelessWidget {
-  const _TabPlaceholder({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
-    return SafeArea(
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(18),
-                  color: AppColors.bgSecondary,
-                  border: Border.all(color: AppColors.glassStroke),
-                ),
-                alignment: Alignment.center,
-                child: Icon(icon, color: AppColors.accentBlue, size: 34),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                title,
-                style: textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                subtitle,
-                textAlign: TextAlign.center,
-                style: textTheme.bodyLarge?.copyWith(
-                  color: AppColors.textBodyHigh,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}

@@ -36,6 +36,11 @@ class FuelApp extends StatelessWidget {
           create: (context) =>
               FuelsApiService(context.read<ApiClientService>().dio),
         ),
+        RepositoryProvider<RegulatedPricesApiService>(
+          create: (context) => RegulatedPricesApiService(
+            context.read<ApiClientService>().dio,
+          ),
+        ),
       ],
       child: MaterialApp(
         title: 'NatankajSI',

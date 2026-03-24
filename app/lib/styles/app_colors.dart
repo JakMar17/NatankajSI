@@ -9,6 +9,7 @@ class AppColors {
 
   static const Color accentBlue = Color(0xFF57C9FF);
   static const Color accentMint = Color(0xFF7BFFD9);
+  static const Color accentOrange = Color(0xFFFF8A65);
 
   static const Color glassFill = Color(0x22FFFFFF);
   static const Color glassStroke = Color(0x44FFFFFF);
