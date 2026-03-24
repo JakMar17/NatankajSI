@@ -13,12 +13,15 @@ class StatisticsCubit extends Cubit<StatisticsState> {
   StatisticsCubit({
     required StationsApiService stationsApiService,
     required FuelsApiService fuelsApiService,
+    required AppBootRepository appBootRepository,
   }) : _stationsApiService = stationsApiService,
        _fuelsApiService = fuelsApiService,
+       _appBootRepository = appBootRepository,
        super(StatisticsState.initial());
 
   final StationsApiService _stationsApiService;
   final FuelsApiService _fuelsApiService;
+  final AppBootRepository _appBootRepository;
 
   static const Distance _distance = Distance();
   static const int _modeMinimumStations = 10;
@@ -29,14 +32,24 @@ class StatisticsCubit extends Cubit<StatisticsState> {
     );
 
     try {
-      final results = await Future.wait<dynamic>([
-        _stationsApiService.listStations(),
-        _fuelsApiService.listFuels(),
-      ]);
-      final stations = results[0] as List<StationWithPrices>;
-      final fuels = results[1] as List<FuelType>;
+      final List<StationWithPrices> stations;
+      final List<FuelType> fuels;
+
+      final boot = _appBootRepository.data;
+      if (boot != null) {
+        stations = boot.stations;
+        fuels = boot.fuels;
+      } else {
+        final results = await Future.wait<dynamic>([
+          _stationsApiService.listStations(),
+          _fuelsApiService.listFuels(),
+        ]);
+        stations = results[0] as List<StationWithPrices>;
+        fuels = results[1] as List<FuelType>;
+      }
+
+      final userLocation = boot?.userLocation ?? await _checkUserLocation();
       final preferredFuelCode = await StationsMapCubit.readPreferredFuelCode();
-      final userLocation = await _tryReadUserLocation();
       final fuelLabels = {
         for (final fuel in fuels)
           fuel.code.trim().toLowerCase(): _labelForFuel(fuel),
@@ -328,13 +341,12 @@ class StatisticsCubit extends Cubit<StatisticsState> {
     );
   }
 
-  Future<LatLng?> _tryReadUserLocation() async {
+  /// Checks location permission and returns position if already granted.
+  ///
+  /// Does not request permission — that is handled once at startup.
+  Future<LatLng?> _checkUserLocation() async {
     try {
-      var permission = await Geolocator.checkPermission();
-
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
+      final permission = await Geolocator.checkPermission();
 
       if (permission == LocationPermission.denied ||
           permission == LocationPermission.deniedForever) {

@@ -22,6 +22,8 @@ class StationsMapState {
     required this.preferredFuelCode,
     required this.selectedStation,
     required this.userLocation,
+    required this.mapInitialCenter,
+    required this.mapInitialZoom,
   });
 
   factory StationsMapState.initial() {
@@ -41,6 +43,8 @@ class StationsMapState {
       preferredFuelCode: null,
       selectedStation: null,
       userLocation: null,
+      mapInitialCenter: defaultMapCenter,
+      mapInitialZoom: 9,
     );
   }
 
@@ -60,10 +64,16 @@ class StationsMapState {
   final StationWithPrices? selectedStation;
   final LatLng? userLocation;
 
+  /// Pre-computed initial center for [FlutterMap], set once in [loadData].
+  final LatLng mapInitialCenter;
+
+  /// Pre-computed initial zoom for [FlutterMap], set once in [loadData].
+  final double mapInitialZoom;
+
   int get totalStations => allStations.length;
-  bool get hasActiveFilters {
-    return selectedFranchiseIds.isNotEmpty || selectedFuelCodes.isNotEmpty;
-  }
+
+  bool get hasActiveFilters =>
+      selectedFranchiseIds.isNotEmpty || selectedFuelCodes.isNotEmpty;
 
   LatLng get center {
     if (userLocation != null) {
@@ -104,6 +114,8 @@ class StationsMapState {
     StationWithPrices? selectedStation,
     bool clearSelectedStation = false,
     LatLng? userLocation,
+    LatLng? mapInitialCenter,
+    double? mapInitialZoom,
   }) {
     return StationsMapState(
       mapController: mapController,
@@ -120,13 +132,15 @@ class StationsMapState {
       averagesByFuelCode: averagesByFuelCode ?? this.averagesByFuelCode,
       selectedFranchiseIds: selectedFranchiseIds ?? this.selectedFranchiseIds,
       selectedFuelCodes: selectedFuelCodes ?? this.selectedFuelCodes,
-        preferredFuelCode: clearPreferredFuelCode
+      preferredFuelCode: clearPreferredFuelCode
           ? null
           : (preferredFuelCode ?? this.preferredFuelCode),
       selectedStation: clearSelectedStation
           ? null
           : (selectedStation ?? this.selectedStation),
       userLocation: userLocation ?? this.userLocation,
+      mapInitialCenter: mapInitialCenter ?? this.mapInitialCenter,
+      mapInitialZoom: mapInitialZoom ?? this.mapInitialZoom,
     );
   }
 }

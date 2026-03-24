@@ -2,7 +2,6 @@ import 'package:app/screens/statistics/fuel_locations/fuel_locations.screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:app/data/data.dart';
 import 'package:app/screens/statistics/bloc/statistics.cubit.dart';
 import 'package:app/screens/statistics/bloc/statistics.state.dart';
 import 'package:app/styles/styles.dart';
@@ -15,15 +14,8 @@ class StatisticsScreen extends StatelessWidget {
   final ValueChanged<int> onStationPressed;
 
   @override
-  Widget build(BuildContext context) {
-    return BlocProvider<StatisticsCubit>(
-      create: (context) => StatisticsCubit(
-        stationsApiService: context.read<StationsApiService>(),
-        fuelsApiService: context.read<FuelsApiService>(),
-      )..load(),
-      child: _StatisticsView(onStationPressed: onStationPressed),
-    );
-  }
+  Widget build(BuildContext context) =>
+      _StatisticsView(onStationPressed: onStationPressed);
 }
 
 class _StatisticsView extends StatelessWidget {
@@ -88,7 +80,7 @@ class _StatisticsReadyView extends StatelessWidget {
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 100),
       itemCount: state.fuelStats.length + 1,
-      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      separatorBuilder: (_, _) => const SizedBox(height: 10),
       itemBuilder: (context, index) {
         if (index == 0) {
           return _StatisticsHeader(state: state);

@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:app/data/data.dart';
+import 'package:app/screens/more/bloc/more.cubit.dart';
 import 'package:app/screens/more/more.screen.dart';
 import 'package:app/screens/stations_map/bloc/stations_map.cubit.dart';
 import 'package:app/screens/stations_map/stations_map.screen.dart';
+import 'package:app/screens/statistics/bloc/statistics.cubit.dart';
 import 'package:app/screens/statistics/statistics.screen.dart';
 import 'package:app/styles/styles.dart';
 
@@ -24,10 +26,14 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    // Boot data is ready by the time HomeScreen appears — trigger global loads.
+    context.read<StatisticsCubit>().load();
+    context.read<MoreCubit>().load();
     _stationsMapCubit = StationsMapCubit(
       stationsApiService: context.read<StationsApiService>(),
       franchisesApiService: context.read<FranchisesApiService>(),
       fuelsApiService: context.read<FuelsApiService>(),
+      appBootRepository: context.read<AppBootRepository>(),
     )..loadData();
   }
 

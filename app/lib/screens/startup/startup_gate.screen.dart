@@ -16,42 +16,134 @@ class StartupGateScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider<StartupGateCubit>(
-      create: (context) =>
-          StartupGateCubit(fuelsApiService: context.read<FuelsApiService>())
-            ..load(),
+      create: (context) => StartupGateCubit(
+        fuelsApiService: context.read<FuelsApiService>(),
+        stationsApiService: context.read<StationsApiService>(),
+        franchisesApiService: context.read<FranchisesApiService>(),
+        regulatedPricesApiService: context.read<RegulatedPricesApiService>(),
+        appBootRepository: context.read<AppBootRepository>(),
+      )..load(),
       child: BlocBuilder<StartupGateCubit, StartupGateState>(
         builder: (context, state) {
-          switch (state.status) {
-            case StartupGateStatus.loading:
-              return const Scaffold(
-                body: Center(child: CircularProgressIndicator()),
-              );
-            case StartupGateStatus.error:
-              return _StartupErrorView(
+          return AnimatedSwitcher(
+            duration: const Duration(milliseconds: 500),
+            transitionBuilder: (child, animation) => FadeTransition(
+              opacity: animation,
+              child: child,
+            ),
+            child: switch (state.status) {
+              StartupGateStatus.loading => _LoadingScreen(
+                key: const ValueKey('loading'),
+                message: state.loadingMessage,
+              ),
+              StartupGateStatus.error => _StartupErrorView(
+                key: const ValueKey('error'),
                 onRetry: context.read<StartupGateCubit>().load,
-              );
-            case StartupGateStatus.ready:
-              return const HomeScreen();
-            case StartupGateStatus.selectPreference:
-              return _FuelPreferenceWelcomeScreen(
-                fuels: state.fuels,
-                selectedFuelCode: state.selectedFuelCode,
-                isSaving: state.isSaving,
-                onFuelSelected: context.read<StartupGateCubit>().selectFuelCode,
-                onContinue: context.read<StartupGateCubit>().confirmSelection,
-                fuelLabelResolver: context
-                    .read<StartupGateCubit>()
-                    .labelForFuel,
-              );
-          }
+              ),
+              StartupGateStatus.ready => const HomeScreen(
+                key: ValueKey('home'),
+              ),
+              StartupGateStatus.selectPreference =>
+                _FuelPreferenceWelcomeScreen(
+                  key: const ValueKey('pref'),
+                  fuels: state.fuels,
+                  selectedFuelCode: state.selectedFuelCode,
+                  isSaving: state.isSaving,
+                  onFuelSelected: context
+                      .read<StartupGateCubit>()
+                      .selectFuelCode,
+                  onContinue: context
+                      .read<StartupGateCubit>()
+                      .confirmSelection,
+                  fuelLabelResolver: context
+                      .read<StartupGateCubit>()
+                      .labelForFuel,
+                ),
+            },
+          );
         },
       ),
     );
   }
 }
 
+class _LoadingScreen extends StatelessWidget {
+  const _LoadingScreen({super.key, this.message});
+
+  final String? message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(gradient: AppGradients.appBackground),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: SafeArea(
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: AppColors.accentBlue.withAlpha(30),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: AppColors.accentBlue.withAlpha(80),
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.local_gas_station_rounded,
+                    size: 40,
+                    color: AppColors.accentBlue,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'NatankajSI',
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Your fuel price companion',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textBodyMedium,
+                  ),
+                ),
+                const SizedBox(height: 48),
+                const SizedBox(
+                  width: 160,
+                  child: LinearProgressIndicator(
+                    minHeight: 2,
+                    backgroundColor: AppColors.glassFill,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      AppColors.accentBlue,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                if (message != null)
+                  Text(
+                    message!,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.textBodyMedium,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _StartupErrorView extends StatelessWidget {
-  const _StartupErrorView({required this.onRetry});
+  const _StartupErrorView({super.key, required this.onRetry});
 
   final VoidCallback onRetry;
 
@@ -87,6 +179,7 @@ class _StartupErrorView extends StatelessWidget {
 
 class _FuelPreferenceWelcomeScreen extends StatelessWidget {
   const _FuelPreferenceWelcomeScreen({
+    super.key,
     required this.fuels,
     required this.selectedFuelCode,
     required this.isSaving,

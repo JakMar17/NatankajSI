@@ -1,3 +1,4 @@
+export 'app_boot_data.model.dart';
 export 'fetch_log.model.dart';
 export 'regulated_price.model.dart';
 export 'franchise.model.dart';

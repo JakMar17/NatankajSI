@@ -7,8 +7,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:app/screens/stations_map/bloc/stations_map.state.dart';
 import 'package:app/data/data.dart';
+import 'package:app/screens/stations_map/bloc/stations_map.state.dart';
 
 enum LocationCenteringResult {
   success,
@@ -23,14 +23,17 @@ class StationsMapCubit extends Cubit<StationsMapState> {
     required StationsApiService stationsApiService,
     required FranchisesApiService franchisesApiService,
     required FuelsApiService fuelsApiService,
+    required AppBootRepository appBootRepository,
   }) : _stationsApiService = stationsApiService,
        _franchisesApiService = franchisesApiService,
        _fuelsApiService = fuelsApiService,
+       _appBootRepository = appBootRepository,
        super(StationsMapState.initial());
 
   final StationsApiService _stationsApiService;
   final FranchisesApiService _franchisesApiService;
   final FuelsApiService _fuelsApiService;
+  final AppBootRepository _appBootRepository;
   Timer? _searchDebounce;
 
   static const Duration _searchDebounceDuration = Duration(milliseconds: 280);
@@ -44,15 +47,25 @@ class StationsMapCubit extends Cubit<StationsMapState> {
     emit(state.copyWith(isLoading: true, clearErrorMessage: true));
 
     try {
-      final results = await Future.wait<dynamic>([
-        _stationsApiService.listStations(),
-        _franchisesApiService.listFranchises(),
-        _fuelsApiService.listFuels(),
-      ]);
+      final List<StationWithPrices> stations;
+      final List<Franchise> franchises;
+      final List<FuelType> fuels;
 
-      final stations = results[0] as List<StationWithPrices>;
-      final franchises = results[1] as List<Franchise>;
-      final fuels = results[2] as List<FuelType>;
+      final boot = _appBootRepository.data;
+      if (boot != null) {
+        stations = boot.stations;
+        franchises = boot.franchises;
+        fuels = boot.fuels;
+      } else {
+        final results = await Future.wait<dynamic>([
+          _stationsApiService.listStations(),
+          _franchisesApiService.listFranchises(),
+          _fuelsApiService.listFuels(),
+        ]);
+        stations = results[0] as List<StationWithPrices>;
+        franchises = results[1] as List<Franchise>;
+        fuels = results[2] as List<FuelType>;
+      }
       final stationsWithCoordinates = stations.whereToList(
         (station) => station.lat != null && station.lng != null,
       );
@@ -76,6 +89,35 @@ class StationsMapCubit extends Cubit<StationsMapState> {
         selectedFuelCodes: state.selectedFuelCodes,
       );
 
+      final bootLocation = boot?.userLocation;
+
+      LatLng mapInitialCenter = defaultMapCenter;
+      double mapInitialZoom = 9;
+      if (bootLocation != null) {
+        final nearest = _findNearestStationFrom(
+          bootLocation,
+          stationsWithCoordinates,
+        );
+        if (nearest != null &&
+            nearest.lat != null &&
+            nearest.lng != null) {
+          final nearestLoc = LatLng(nearest.lat!, nearest.lng!);
+          final distKm = _distance.as(
+            LengthUnit.Kilometer,
+            bootLocation,
+            nearestLoc,
+          );
+          mapInitialCenter = LatLng(
+            (bootLocation.latitude + nearestLoc.latitude) / 2,
+            (bootLocation.longitude + nearestLoc.longitude) / 2,
+          );
+          mapInitialZoom = _zoomForDistance(distKm);
+        } else {
+          mapInitialCenter = bootLocation;
+          mapInitialZoom = _userLocationZoom;
+        }
+      }
+
       emit(
         state.copyWith(
           isLoading: false,
@@ -88,6 +130,9 @@ class StationsMapCubit extends Cubit<StationsMapState> {
           ),
           preferredFuelCode: resolvedPreferredFuelCode,
           clearSelectedStation: true,
+          userLocation: bootLocation,
+          mapInitialCenter: mapInitialCenter,
+          mapInitialZoom: mapInitialZoom,
         ),
       );
 
@@ -95,7 +140,9 @@ class StationsMapCubit extends Cubit<StationsMapState> {
         await writePreferredFuelCode(resolvedPreferredFuelCode);
       }
 
-      await centerOnUserLocation();
+      if (bootLocation == null) {
+        await centerOnUserLocation();
+      }
     } on Exception catch (error) {
       emit(
         state.copyWith(
@@ -367,15 +414,21 @@ class StationsMapCubit extends Cubit<StationsMapState> {
     return super.close();
   }
 
-  StationWithPrices? _findNearestStation(LatLng userLocation) {
-    if (state.allStations.isEmpty) {
+  StationWithPrices? _findNearestStation(LatLng userLocation) =>
+      _findNearestStationFrom(userLocation, state.allStations);
+
+  StationWithPrices? _findNearestStationFrom(
+    LatLng userLocation,
+    List<StationWithPrices> stations,
+  ) {
+    if (stations.isEmpty) {
       return null;
     }
 
     StationWithPrices? nearestStation;
     var nearestDistance = double.infinity;
 
-    for (final station in state.allStations) {
+    for (final station in stations) {
       final latitude = station.lat;
       final longitude = station.lng;
 

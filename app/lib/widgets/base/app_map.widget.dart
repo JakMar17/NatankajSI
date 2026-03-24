@@ -25,6 +25,7 @@ class AppMap extends StatelessWidget {
     this.clusterSize = const Size(46, 46),
     this.clusterPadding = const EdgeInsets.all(60),
     this.clusterBuilder,
+    this.onMapReady,
     this.tileUrlTemplate = _defaultTileUrlTemplate,
     this.tileSubdomains = _defaultTileSubdomains,
     super.key,
@@ -38,6 +39,7 @@ class AppMap extends StatelessWidget {
   final double minZoom;
   final double maxZoom;
   final void Function(LatLng point)? onTap;
+  final VoidCallback? onMapReady;
   final bool clusterMarkers;
   final int maxClusterRadius;
   final double clusterBreakoutZoom;
@@ -58,6 +60,7 @@ class AppMap extends StatelessWidget {
         minZoom: minZoom,
         maxZoom: maxZoom,
         onTap: (_, point) => onTap?.call(point),
+        onMapReady: onMapReady,
       ),
       children: [
         TileLayer(

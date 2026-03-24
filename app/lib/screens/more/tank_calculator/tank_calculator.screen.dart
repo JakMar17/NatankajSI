@@ -24,6 +24,7 @@ class TankCalculatorScreen extends StatelessWidget {
     return BlocProvider<TankCalculatorCubit>(
       create: (context) => TankCalculatorCubit(
         stationsApiService: context.read<StationsApiService>(),
+        appBootRepository: context.read<AppBootRepository>(),
       )..load(),
       child: DecoratedBox(
         decoration: const BoxDecoration(gradient: AppGradients.appBackground),

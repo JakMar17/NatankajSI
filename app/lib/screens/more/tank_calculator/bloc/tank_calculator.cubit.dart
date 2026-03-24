@@ -10,11 +10,15 @@ import 'package:app/screens/more/tank_calculator/bloc/tank_calculator.state.dart
 
 /// Loads station prices and computes tank cost summaries.
 class TankCalculatorCubit extends Cubit<TankCalculatorState> {
-  TankCalculatorCubit({required StationsApiService stationsApiService})
-    : _stationsApiService = stationsApiService,
-      super(TankCalculatorState.initial());
+  TankCalculatorCubit({
+    required StationsApiService stationsApiService,
+    required AppBootRepository appBootRepository,
+  }) : _stationsApiService = stationsApiService,
+       _appBootRepository = appBootRepository,
+       super(TankCalculatorState.initial());
 
   final StationsApiService _stationsApiService;
+  final AppBootRepository _appBootRepository;
 
   static const Distance _distance = Distance();
   static const double _nearbyRadiusKm = 30;
@@ -29,12 +33,18 @@ class TankCalculatorCubit extends Cubit<TankCalculatorState> {
   Future<void> load() async {
     emit(TankCalculatorState.initial());
     try {
-      final results = await Future.wait([
-        _stationsApiService.listStations(),
-        _tryReadUserLocation(),
-      ]);
-      _cachedStations = results[0] as List<StationWithPrices>;
-      _userLocation = results[1] as LatLng?;
+      final boot = _appBootRepository.data;
+      if (boot != null) {
+        _cachedStations = boot.stations;
+        _userLocation = boot.userLocation;
+      } else {
+        final results = await Future.wait([
+          _stationsApiService.listStations(),
+          _tryReadUserLocation(),
+        ]);
+        _cachedStations = results[0] as List<StationWithPrices>;
+        _userLocation = results[1] as LatLng?;
+      }
 
       final fuelCodes = _extractFuelCodes(_cachedStations);
       final fuelNames = _extractFuelNames(_cachedStations);

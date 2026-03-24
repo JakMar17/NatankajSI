@@ -59,6 +59,7 @@ class StationsMapScreen extends StatelessWidget {
           stationsApiService: context.read<StationsApiService>(),
           franchisesApiService: context.read<FranchisesApiService>(),
           fuelsApiService: context.read<FuelsApiService>(),
+          appBootRepository: context.read<AppBootRepository>(),
         )..loadData();
       },
       child: _StationsMapView(
@@ -185,10 +186,10 @@ class _MapBody extends StatelessWidget {
       children: [
         AppMap(
           mapController: state.mapController,
-          center: state.center,
+          center: state.mapInitialCenter,
           markers: stationMarkers,
           nonClusterMarkers: userLocationMarkers,
-          initialZoom: 9,
+          initialZoom: state.mapInitialZoom,
           minZoom: 4,
           maxZoom: 18,
           maxClusterRadius: _clusterRadius,

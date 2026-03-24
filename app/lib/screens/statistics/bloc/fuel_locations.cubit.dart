@@ -9,11 +9,15 @@ import 'package:app/screens/statistics/bloc/statistics.state.dart';
 
 /// Loads stations for one fuel type and supports local search/sort.
 class FuelLocationsCubit extends Cubit<FuelLocationsState> {
-  FuelLocationsCubit({required StationsApiService stationsApiService})
-    : _stationsApiService = stationsApiService,
-      super(FuelLocationsState.initial());
+  FuelLocationsCubit({
+    required StationsApiService stationsApiService,
+    required AppBootRepository appBootRepository,
+  }) : _stationsApiService = stationsApiService,
+       _appBootRepository = appBootRepository,
+       super(FuelLocationsState.initial());
 
   final StationsApiService _stationsApiService;
+  final AppBootRepository _appBootRepository;
 
   static const Distance _distance = Distance();
   static const int _modeMinimumStations = 10;
@@ -30,8 +34,12 @@ class FuelLocationsCubit extends Cubit<FuelLocationsState> {
     );
 
     try {
-      final stations = await _stationsApiService.listStations();
-      final userLocation = await _tryReadUserLocation();
+      final boot = _appBootRepository.data;
+      final stations = boot != null
+          ? boot.stations
+          : await _stationsApiService.listStations();
+      final userLocation =
+          boot?.userLocation ?? await _checkUserLocation();
       final normalizedFuelCode = fuelCode.trim().toLowerCase();
       final allItems = <FuelLocationItem>[];
 
@@ -285,13 +293,12 @@ class FuelLocationsCubit extends Cubit<FuelLocationsState> {
     );
   }
 
-  Future<LatLng?> _tryReadUserLocation() async {
+  /// Checks location permission and returns position if already granted.
+  ///
+  /// Does not request permission — that is handled once at startup.
+  Future<LatLng?> _checkUserLocation() async {
     try {
-      var permission = await Geolocator.checkPermission();
-
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
+      final permission = await Geolocator.checkPermission();
 
       if (permission == LocationPermission.denied ||
           permission == LocationPermission.deniedForever) {

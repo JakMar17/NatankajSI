@@ -33,6 +33,7 @@ class FuelLocationsScreen extends StatelessWidget {
     return BlocProvider<FuelLocationsCubit>(
       create: (context) => FuelLocationsCubit(
         stationsApiService: context.read<StationsApiService>(),
+        appBootRepository: context.read<AppBootRepository>(),
       )..load(fuelCode: fuelCode, fuelLabel: fuelLabel),
       child: DecoratedBox(
         decoration: const BoxDecoration(gradient: AppGradients.appBackground),
