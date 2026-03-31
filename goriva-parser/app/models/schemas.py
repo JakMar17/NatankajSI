@@ -91,10 +91,24 @@ class MolDataSchema(_Base):
 
 # ── Station response schemas ──────────────────────────────────────────────────
 
-class StationWithPrices(StationSchema):
+
+class StationSummary(StationSchema):
+    franchise_name: str | None
+
+
+class StationDetail(StationSchema):
     franchise_name: str | None
     latest_prices: list[LatestPriceEntry]
     mol: MolDataSchema | None = None
+
+
+class StationLatestPrices(_Base):
+    id: int
+    latest_prices: list[LatestPriceEntry]
+
+
+# kept for backwards compat
+StationWithPrices = StationDetail
 
 
 class PriceEntry(_Base):

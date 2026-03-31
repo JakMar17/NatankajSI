@@ -11,7 +11,10 @@ from app.models.orm import Franchise, FuelType, PriceSnapshot, Station
 from app.models.schemas import (
     LatestPriceEntry,
     PriceSnapshotSchema,
+    StationDetail,
+    StationLatestPrices,
     StationSchema,
+    StationSummary,
     StationWithPrices,
 )
 
@@ -53,34 +56,76 @@ async def _get_latest_prices_for_station(
     ]
 
 
-@router.get("", response_model=list[StationWithPrices])
+async def _get_latest_prices_bulk(
+    session: AsyncSession, station_ids: list[int]
+) -> dict[int, list[LatestPriceEntry]]:
+    sub = (
+        select(
+            PriceSnapshot.station_id,
+            PriceSnapshot.fuel_type_id,
+            func.max(PriceSnapshot.fetched_at).label("max_fetched"),
+        )
+        .where(PriceSnapshot.station_id.in_(station_ids))
+        .group_by(PriceSnapshot.station_id, PriceSnapshot.fuel_type_id)
+        .subquery()
+    )
+    stmt = (
+        select(PriceSnapshot, FuelType.code, FuelType.name.label("fuel_name"))
+        .join(
+            sub,
+            (PriceSnapshot.station_id == sub.c.station_id)
+            & (PriceSnapshot.fuel_type_id == sub.c.fuel_type_id)
+            & (PriceSnapshot.fetched_at == sub.c.max_fetched),
+        )
+        .join(FuelType, PriceSnapshot.fuel_type_id == FuelType.pk)
+        .order_by(PriceSnapshot.station_id, FuelType.code)
+    )
+    result = await session.execute(stmt)
+    prices_by_station: dict[int, list[LatestPriceEntry]] = {}
+    for row in result.all():
+        sid = row.PriceSnapshot.station_id
+        prices_by_station.setdefault(sid, []).append(
+            LatestPriceEntry(
+                fuel_code=row.code,
+                fuel_name=row.fuel_name,
+                price=row.PriceSnapshot.price,
+                fetched_at=row.PriceSnapshot.fetched_at,
+            )
+        )
+    return prices_by_station
+
+
+@router.get("", response_model=list[StationSummary])
 async def list_stations(session: AsyncSession = Depends(get_session)):
     result = await session.execute(
         select(Station).options(selectinload(Station.franchise)).order_by(Station.name)
     )
     stations = result.scalars().all()
-
-    mol_map = await load_mol_map(session, [s.pk for s in stations])
-
-    out = []
-    for s in stations:
-        prices = await _get_latest_prices_for_station(session, s.pk)
-        out.append(
-            StationWithPrices(
-                pk=s.pk,
-                franchise_id=s.franchise_id,
-                name=s.name,
-                address=s.address,
-                lat=s.lat,
-                lng=s.lng,
-                zip_code=s.zip_code,
-                open_hours=s.open_hours,
-                franchise_name=s.franchise.name if s.franchise else None,
-                latest_prices=prices,
-                mol=mol_map.get(s.pk),
-            )
+    return [
+        StationSummary(
+            pk=s.pk,
+            franchise_id=s.franchise_id,
+            name=s.name,
+            address=s.address,
+            lat=s.lat,
+            lng=s.lng,
+            zip_code=s.zip_code,
+            open_hours=s.open_hours,
+            franchise_name=s.franchise.name if s.franchise else None,
         )
-    return out
+        for s in stations
+    ]
+
+
+@router.get("/latest-prices", response_model=list[StationLatestPrices])
+async def station_latest_prices(session: AsyncSession = Depends(get_session)):
+    result = await session.execute(select(Station.pk))
+    station_ids = [row[0] for row in result.all()]
+    prices_map = await _get_latest_prices_bulk(session, station_ids)
+    return [
+        StationLatestPrices(id=sid, latest_prices=prices)
+        for sid, prices in prices_map.items()
+    ]
 
 
 @router.get("/{pk}", response_model=StationWithPrices)
