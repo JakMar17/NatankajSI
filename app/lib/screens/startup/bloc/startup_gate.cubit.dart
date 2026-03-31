@@ -38,6 +38,16 @@ class StartupGateCubit extends Cubit<StartupGateState> {
       ),
     );
 
+    // Start the latest-prices fetch in the background immediately.
+    // Feature screens will await [AppBootRepository.latestPricesFuture] when
+    // they need price data; startup itself does not block on this.
+    _appBootRepository.latestPricesFuture = _stationsApiService
+        .listLatestPrices()
+        .onError((error, stackTrace) {
+          log('StartupGateCubit: latest-prices fetch failed: $error');
+          return <int, List<LatestPriceEntry>>{};
+        });
+
     try {
       final results = await Future.wait<dynamic>([
         _stationsApiService.listStations(),
@@ -48,7 +58,7 @@ class StartupGateCubit extends Cubit<StartupGateState> {
       ]);
 
       _appBootRepository.data = AppBootData(
-        stations: results[0] as List<StationWithPrices>,
+        stations: results[0] as List<Station>,
         franchises: results[1] as List<Franchise>,
         fuels: results[2] as List<FuelType>,
         latestRegulatedPrice: results[3] as RegulatedPrice?,

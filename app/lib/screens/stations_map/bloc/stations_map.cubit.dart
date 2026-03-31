@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 import 'dart:math' as math;
 
 import 'package:dart_util_box/dart_util_box.dart';
@@ -43,32 +44,36 @@ class StationsMapCubit extends Cubit<StationsMapState> {
   static const String preferredFuelCodeStorageKey =
       'stations_map.preferred_fuel_code';
 
+  // Lightweight station list used to apply prices once they arrive.
+  List<Station> _rawStations = const [];
+
   Future<void> loadData() async {
     emit(state.copyWith(isLoading: true, clearErrorMessage: true));
 
     try {
-      final List<StationWithPrices> stations;
       final List<Franchise> franchises;
       final List<FuelType> fuels;
+      final Future<Map<int, List<LatestPriceEntry>>> pricesFuture;
 
       final boot = _appBootRepository.data;
       if (boot != null) {
-        stations = boot.stations;
+        _rawStations = boot.stations;
         franchises = boot.franchises;
         fuels = boot.fuels;
+        pricesFuture = _appBootRepository.latestPricesFuture ??
+            _stationsApiService.listLatestPrices();
       } else {
         final results = await Future.wait<dynamic>([
           _stationsApiService.listStations(),
           _franchisesApiService.listFranchises(),
           _fuelsApiService.listFuels(),
         ]);
-        stations = results[0] as List<StationWithPrices>;
+        _rawStations = results[0] as List<Station>;
         franchises = results[1] as List<Franchise>;
         fuels = results[2] as List<FuelType>;
+        pricesFuture = _stationsApiService.listLatestPrices();
       }
-      final stationsWithCoordinates = stations.whereToList(
-        (station) => station.lat != null && station.lng != null,
-      );
+
       final franchisesById = {
         for (final franchise in franchises) franchise.pk: franchise,
       };
@@ -81,8 +86,14 @@ class StationsMapCubit extends Cubit<StationsMapState> {
               fuelsByCode.containsKey(preferredFuelCode)
           ? preferredFuelCode
           : null;
+
+      // Show stations on map immediately without waiting for prices.
+      final stationsNoPrices = mergeStationsWithPrices(_rawStations, const {});
+      final stationsWithCoords = stationsNoPrices.whereToList(
+        (s) => s.lat != null && s.lng != null,
+      );
       final filteredStations = _filterStations(
-        stations: stationsWithCoordinates,
+        stations: stationsWithCoords,
         query: state.searchQuery,
         franchisesById: franchisesById,
         selectedFranchiseIds: state.selectedFranchiseIds,
@@ -96,11 +107,9 @@ class StationsMapCubit extends Cubit<StationsMapState> {
       if (bootLocation != null) {
         final nearest = _findNearestStationFrom(
           bootLocation,
-          stationsWithCoordinates,
+          stationsWithCoords,
         );
-        if (nearest != null &&
-            nearest.lat != null &&
-            nearest.lng != null) {
+        if (nearest != null && nearest.lat != null && nearest.lng != null) {
           final nearestLoc = LatLng(nearest.lat!, nearest.lng!);
           final distKm = _distance.as(
             LengthUnit.Kilometer,
@@ -121,13 +130,11 @@ class StationsMapCubit extends Cubit<StationsMapState> {
       emit(
         state.copyWith(
           isLoading: false,
-          allStations: stationsWithCoordinates,
+          allStations: stationsWithCoords,
           stations: filteredStations,
           franchisesById: franchisesById,
           fuelsByCode: fuelsByCode,
-          averagesByFuelCode: _computeAveragesByFuelCode(
-            stationsWithCoordinates,
-          ),
+          averagesByFuelCode: const {},
           preferredFuelCode: resolvedPreferredFuelCode,
           clearSelectedStation: true,
           userLocation: bootLocation,
@@ -141,8 +148,32 @@ class StationsMapCubit extends Cubit<StationsMapState> {
       }
 
       if (bootLocation == null) {
-        await centerOnUserLocation();
+        unawaited(centerOnUserLocation());
       }
+
+      // Wait for prices and update the map once they arrive.
+      final pricesById = await pricesFuture;
+      if (isClosed) return;
+
+      final stationsWithPrices = mergeStationsWithPrices(_rawStations, pricesById);
+      final allWithCoords = stationsWithPrices.whereToList(
+        (s) => s.lat != null && s.lng != null,
+      );
+      final filteredWithPrices = _filterStations(
+        stations: allWithCoords,
+        query: state.searchQuery,
+        franchisesById: state.franchisesById,
+        selectedFranchiseIds: state.selectedFranchiseIds,
+        selectedFuelCodes: state.selectedFuelCodes,
+      );
+
+      emit(
+        state.copyWith(
+          allStations: allWithCoords,
+          stations: filteredWithPrices,
+          averagesByFuelCode: _computeAveragesByFuelCode(allWithCoords),
+        ),
+      );
     } on Exception catch (error) {
       emit(
         state.copyWith(
@@ -294,7 +325,33 @@ class StationsMapCubit extends Cubit<StationsMapState> {
       );
     }
 
-    emit(state.copyWith(selectedStation: station));
+    emit(
+      state.copyWith(
+        selectedStation: station,
+        clearSelectedStationDetail: true,
+        isLoadingStationDetail: true,
+      ),
+    );
+    unawaited(_loadStationDetail(station.pk));
+  }
+
+  Future<void> _loadStationDetail(int pk) async {
+    try {
+      final detail = await _stationsApiService.getStation(pk: pk);
+      if (state.selectedStation?.pk == pk) {
+        emit(
+          state.copyWith(
+            selectedStationDetail: detail,
+            isLoadingStationDetail: false,
+          ),
+        );
+      }
+    } on Exception catch (error) {
+      log('_loadStationDetail failed for pk=$pk: $error');
+      if (state.selectedStation?.pk == pk) {
+        emit(state.copyWith(isLoadingStationDetail: false));
+      }
+    }
   }
 
   void selectStationFromDropdown(StationWithPrices station) {
@@ -308,7 +365,14 @@ class StationsMapCubit extends Cubit<StationsMapState> {
       );
     }
 
-    emit(state.copyWith(selectedStation: station));
+    emit(
+      state.copyWith(
+        selectedStation: station,
+        clearSelectedStationDetail: true,
+        isLoadingStationDetail: true,
+      ),
+    );
+    unawaited(_loadStationDetail(station.pk));
   }
 
   void selectStationByPk(int stationPk) {

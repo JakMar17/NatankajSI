@@ -21,6 +21,8 @@ class StationsMapState {
     required this.selectedFuelCodes,
     required this.preferredFuelCode,
     required this.selectedStation,
+    required this.selectedStationDetail,
+    required this.isLoadingStationDetail,
     required this.userLocation,
     required this.mapInitialCenter,
     required this.mapInitialZoom,
@@ -42,6 +44,8 @@ class StationsMapState {
       selectedFuelCodes: const <String>{},
       preferredFuelCode: null,
       selectedStation: null,
+      selectedStationDetail: null,
+      isLoadingStationDetail: false,
       userLocation: null,
       mapInitialCenter: defaultMapCenter,
       mapInitialZoom: 9,
@@ -62,6 +66,16 @@ class StationsMapState {
   final Set<String> selectedFuelCodes;
   final String? preferredFuelCode;
   final StationWithPrices? selectedStation;
+
+  /// Full station detail fetched lazily from [GET /api/v1/stations/{id}].
+  ///
+  /// Null until the per-station detail request completes. Contains prices
+  /// and MOL data that are not available in the lightweight station list.
+  final StationWithPrices? selectedStationDetail;
+
+  /// True while the per-station detail request is in flight.
+  final bool isLoadingStationDetail;
+
   final LatLng? userLocation;
 
   /// Pre-computed initial center for [FlutterMap], set once in [loadData].
@@ -113,10 +127,14 @@ class StationsMapState {
     bool clearPreferredFuelCode = false,
     StationWithPrices? selectedStation,
     bool clearSelectedStation = false,
+    StationWithPrices? selectedStationDetail,
+    bool clearSelectedStationDetail = false,
+    bool? isLoadingStationDetail,
     LatLng? userLocation,
     LatLng? mapInitialCenter,
     double? mapInitialZoom,
   }) {
+    final clearStation = clearSelectedStation;
     return StationsMapState(
       mapController: mapController,
       isLoading: isLoading ?? this.isLoading,
@@ -135,9 +153,15 @@ class StationsMapState {
       preferredFuelCode: clearPreferredFuelCode
           ? null
           : (preferredFuelCode ?? this.preferredFuelCode),
-      selectedStation: clearSelectedStation
+      selectedStation: clearStation
           ? null
           : (selectedStation ?? this.selectedStation),
+      selectedStationDetail: (clearStation || clearSelectedStationDetail)
+          ? null
+          : (selectedStationDetail ?? this.selectedStationDetail),
+      isLoadingStationDetail: clearStation
+          ? false
+          : (isLoadingStationDetail ?? this.isLoadingStationDetail),
       userLocation: userLocation ?? this.userLocation,
       mapInitialCenter: mapInitialCenter ?? this.mapInitialCenter,
       mapInitialZoom: mapInitialZoom ?? this.mapInitialZoom,

@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:dart_util_box/dart_util_box.dart';
 import 'package:dio/dio.dart';
 import 'package:intl/intl.dart';
@@ -14,10 +16,12 @@ class RegulatedPricesApiService {
 
   /// Fetches the most recently published regulated price.
   Future<RegulatedPrice> getLatest() async {
+    final startTime = DateTime.now();
     final response = await _dio.get<Map<String, dynamic>>(
       '/api/v1/regulated-prices/latest',
     );
     final payload = response.data;
+    log("Fetched latest regulated price in ${DateTime.now().difference(startTime).inMilliseconds}ms");
     if (payload == null) {
       throw const FormatException('Missing regulated price payload.');
     }

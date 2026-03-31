@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'package:intl/intl.dart';
 
 import 'package:app/data/data.dart';
 import 'package:app/screens/more/tank_calculator/bloc/tank_calculator.cubit.dart';
@@ -12,6 +14,7 @@ part 'widgets/_station_card.widget.dart';
 part 'widgets/_capacity_dialog.widget.dart';
 part 'widgets/_fuel_selector_sheet.widget.dart';
 part 'widgets/_fuel_chip.widget.dart';
+part 'widgets/_tank_cost_history_inline.widget.dart';
 
 /// Calculates the full cost of a tank fill across nearby stations.
 class TankCalculatorScreen extends StatelessWidget {
@@ -25,6 +28,7 @@ class TankCalculatorScreen extends StatelessWidget {
       create: (context) => TankCalculatorCubit(
         stationsApiService: context.read<StationsApiService>(),
         appBootRepository: context.read<AppBootRepository>(),
+        regulatedPricesApiService: context.read<RegulatedPricesApiService>(),
       )..load(),
       child: DecoratedBox(
         decoration: const BoxDecoration(gradient: AppGradients.appBackground),
@@ -197,9 +201,32 @@ class _ReadyBody extends StatelessWidget {
           ),
         ),
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(16, 10, 16, 40),
+          padding: EdgeInsets.fromLTRB(
+            16,
+            10,
+            16,
+            state.supportsRegulatedHistory &&
+                    state.regulatedPriceHistory.isNotEmpty
+                ? 16
+                : 40,
+          ),
           sliver: SliverList(delegate: SliverChildListDelegate(stationCards())),
         ),
+        if (state.supportsRegulatedHistory &&
+            state.regulatedPriceHistory.isNotEmpty)
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
+            sliver: SliverToBoxAdapter(
+              child: TankCostHistoryInline(
+                prices: state.regulatedPriceHistory,
+                fuelCode: state.fuelCode ?? '95',
+                fuelName:
+                    state.fuelNames[state.fuelCode ?? ''] ??
+                    (state.fuelCode ?? '95'),
+                capacityLiters: state.capacityLiters,
+              ),
+            ),
+          ),
       ],
     );
   }

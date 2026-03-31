@@ -3,7 +3,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:app/data/models/franchise.model.dart';
 import 'package:app/data/models/fuel_type.model.dart';
 import 'package:app/data/models/regulated_price.model.dart';
-import 'package:app/data/models/station_with_prices.model.dart';
+import 'package:app/data/models/station.model.dart';
 
 /// Pre-fetched app startup data shared across feature cubits.
 ///
@@ -19,7 +19,7 @@ class AppBootData {
     required this.latestRegulatedPrice,
   });
 
-  final List<StationWithPrices> stations;
+  final List<Station> stations;
   final List<Franchise> franchises;
   final List<FuelType> fuels;
   final LatLng? userLocation;

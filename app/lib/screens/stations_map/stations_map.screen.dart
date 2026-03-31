@@ -102,6 +102,8 @@ class _StationsMapView extends StatelessWidget {
                 if (state.selectedStation != null)
                   _StationDetailsSheet(
                     station: state.selectedStation!,
+                    stationDetail: state.selectedStationDetail,
+                    isLoadingDetail: state.isLoadingStationDetail,
                     franchise: state.selectedStation!.franchiseId == null
                         ? null
                         : state.franchisesById[state

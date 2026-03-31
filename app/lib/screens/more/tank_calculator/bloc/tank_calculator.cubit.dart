@@ -13,18 +13,20 @@ class TankCalculatorCubit extends Cubit<TankCalculatorState> {
   TankCalculatorCubit({
     required StationsApiService stationsApiService,
     required AppBootRepository appBootRepository,
+    required RegulatedPricesApiService regulatedPricesApiService,
   }) : _stationsApiService = stationsApiService,
        _appBootRepository = appBootRepository,
+       _regulatedPricesApiService = regulatedPricesApiService,
        super(TankCalculatorState.initial());
 
   final StationsApiService _stationsApiService;
   final AppBootRepository _appBootRepository;
+  final RegulatedPricesApiService _regulatedPricesApiService;
 
   static const Distance _distance = Distance();
   static const double _nearbyRadiusKm = 30;
   static const double _maxRadiusKm = 1000;
-  static const String _preferredFuelKey =
-      'stations_map.preferred_fuel_code';
+  static const String _preferredFuelKey = 'stations_map.preferred_fuel_code';
   static const String _capacityKey = 'tank_calculator.capacity_liters';
 
   List<StationWithPrices> _cachedStations = [];
@@ -35,21 +37,29 @@ class TankCalculatorCubit extends Cubit<TankCalculatorState> {
     try {
       final boot = _appBootRepository.data;
       if (boot != null) {
-        _cachedStations = boot.stations;
+        final pricesById = _appBootRepository.latestPricesFuture != null
+            ? await _appBootRepository.latestPricesFuture!
+            : await _stationsApiService.listLatestPrices();
+        _cachedStations = mergeStationsWithPrices(boot.stations, pricesById);
         _userLocation = boot.userLocation;
       } else {
         final results = await Future.wait([
           _stationsApiService.listStations(),
+          _stationsApiService.listLatestPrices(),
           _tryReadUserLocation(),
         ]);
-        _cachedStations = results[0] as List<StationWithPrices>;
-        _userLocation = results[1] as LatLng?;
+        _cachedStations = mergeStationsWithPrices(
+          results[0] as List<Station>,
+          results[1] as Map<int, List<LatestPriceEntry>>,
+        );
+        _userLocation = results[2] as LatLng?;
       }
 
       final fuelCodes = _extractFuelCodes(_cachedStations);
       final fuelNames = _extractFuelNames(_cachedStations);
       final preferred = await _readPreferredFuelCode(fuelCodes);
       final savedCapacity = await _readSavedCapacity();
+      final regulatedHistory = await _loadRegulatedHistorySafely();
 
       emit(
         _computeResults(
@@ -57,6 +67,7 @@ class TankCalculatorCubit extends Cubit<TankCalculatorState> {
           availableFuelCodes: fuelCodes,
           fuelNames: fuelNames,
           capacityLiters: savedCapacity,
+          regulatedPriceHistory: regulatedHistory,
         ),
       );
     } on Exception catch (e) {
@@ -86,6 +97,7 @@ class TankCalculatorCubit extends Cubit<TankCalculatorState> {
         availableFuelCodes: state.availableFuelCodes,
         fuelNames: state.fuelNames,
         capacityLiters: state.capacityLiters,
+        regulatedPriceHistory: state.regulatedPriceHistory,
       ),
     );
   }
@@ -95,6 +107,7 @@ class TankCalculatorCubit extends Cubit<TankCalculatorState> {
     required List<String> availableFuelCodes,
     required Map<String, String> fuelNames,
     required double capacityLiters,
+    required List<RegulatedPrice> regulatedPriceHistory,
   }) {
     final normalizedCode = fuelCode.trim().toLowerCase();
     final items = <_StationItem>[];
@@ -137,6 +150,7 @@ class TankCalculatorCubit extends Cubit<TankCalculatorState> {
         capacityLiters: capacityLiters,
         fuelCode: fuelCode,
         availableFuelCodes: availableFuelCodes,
+        regulatedPriceHistory: regulatedPriceHistory,
         fuelNames: fuelNames,
         errorMessage: 'No stations found for selected fuel.',
       );
@@ -171,9 +185,7 @@ class TankCalculatorCubit extends Cubit<TankCalculatorState> {
     // Use 1 000 km radius when location is known, otherwise all stations.
     final searchSpace = _userLocation != null
         ? items
-              .where(
-                (i) => (i.distanceKm ?? double.infinity) <= _maxRadiusKm,
-              )
+              .where((i) => (i.distanceKm ?? double.infinity) <= _maxRadiusKm)
               .toList()
         : items;
     final pool = searchSpace.isNotEmpty ? searchSpace : items;
@@ -190,6 +202,7 @@ class TankCalculatorCubit extends Cubit<TankCalculatorState> {
       capacityLiters: capacityLiters,
       fuelCode: fuelCode,
       availableFuelCodes: availableFuelCodes,
+      regulatedPriceHistory: regulatedPriceHistory,
       fuelNames: fuelNames,
       hasLocation: _userLocation != null,
       closestStation: closestStation,
@@ -198,6 +211,53 @@ class TankCalculatorCubit extends Cubit<TankCalculatorState> {
       cheapestAll: cheapestAll,
       mostExpensiveAll: mostExpensiveAll,
     );
+  }
+
+  Future<List<RegulatedPrice>> _loadRegulatedHistorySafely() async {
+    try {
+      final raw = await _regulatedPricesApiService.list();
+      final sorted = [...raw]
+        ..sort((a, b) => a.validFrom.compareTo(b.validFrom));
+      return _forwardFillToToday(sorted);
+    } on Exception catch (e) {
+      log('TankCalculatorCubit._loadRegulatedHistorySafely failed: $e');
+      return const [];
+    }
+  }
+
+  static List<RegulatedPrice> _forwardFillToToday(List<RegulatedPrice> sorted) {
+    if (sorted.isEmpty) return sorted;
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final result = <RegulatedPrice>[];
+
+    for (int i = 0; i < sorted.length; i++) {
+      final current = sorted[i];
+      result.add(current);
+
+      final nextDate = (i + 1 < sorted.length)
+          ? sorted[i + 1].validFrom
+          : today.add(const Duration(days: 1));
+
+      var day = DateTime(
+        current.validFrom.year,
+        current.validFrom.month,
+        current.validFrom.day + 1,
+      );
+      while (day.isBefore(nextDate) && !day.isAfter(today)) {
+        result.add(
+          RegulatedPrice(
+            pk: current.pk,
+            validFrom: day,
+            petrolPrice: current.petrolPrice,
+            dieselPrice: current.dieselPrice,
+          ),
+        );
+        day = day.add(const Duration(days: 1));
+      }
+    }
+    return result;
   }
 
   List<String> _extractFuelCodes(List<StationWithPrices> stations) {

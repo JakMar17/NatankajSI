@@ -1,3 +1,5 @@
+import 'package:app/data/models/regulated_price.model.dart';
+
 enum TankCalculatorStatus { loading, ready, error }
 
 /// A station result used for display in the tank calculator.
@@ -25,6 +27,7 @@ class TankCalculatorState {
     required this.status,
     required this.capacityLiters,
     required this.availableFuelCodes,
+    this.regulatedPriceHistory = const [],
     this.fuelNames = const {},
     this.fuelCode,
     this.hasLocation = false,
@@ -40,6 +43,7 @@ class TankCalculatorState {
   final double capacityLiters;
   final String? fuelCode;
   final List<String> availableFuelCodes;
+  final List<RegulatedPrice> regulatedPriceHistory;
 
   /// Human-readable display name keyed by fuel code.
   final Map<String, String> fuelNames;
@@ -70,11 +74,15 @@ class TankCalculatorState {
     availableFuelCodes: [],
   );
 
+  /// Whether regulated historical prices are available for the selected fuel.
+  bool get supportsRegulatedHistory => fuelCode == '95' || fuelCode == 'dizel';
+
   TankCalculatorState withCapacity(double liters) => TankCalculatorState(
     status: status,
     capacityLiters: liters,
     fuelCode: fuelCode,
     availableFuelCodes: availableFuelCodes,
+    regulatedPriceHistory: regulatedPriceHistory,
     fuelNames: fuelNames,
     hasLocation: hasLocation,
     closestStation: closestStation,

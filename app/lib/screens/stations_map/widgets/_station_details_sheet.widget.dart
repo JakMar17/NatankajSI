@@ -3,13 +3,25 @@ part of '../stations_map.screen.dart';
 class _StationDetailsSheet extends StatelessWidget {
   const _StationDetailsSheet({
     required this.station,
+    required this.stationDetail,
+    required this.isLoadingDetail,
     required this.franchise,
     required this.fuelsByCode,
     required this.averagesByFuelCode,
     required this.preferredFuelCode,
   });
 
+  /// Merged station with prices from the latest-prices batch fetch.
   final StationWithPrices station;
+
+  /// Full station detail lazily fetched from [GET /api/v1/stations/{id}].
+  ///
+  /// Null while loading. When set, its prices and MOL data take precedence.
+  final StationWithPrices? stationDetail;
+
+  /// True while the per-station detail request is in flight.
+  final bool isLoadingDetail;
+
   final Franchise? franchise;
   final Map<String, FuelType> fuelsByCode;
   final Map<String, double> averagesByFuelCode;
@@ -40,8 +52,9 @@ class _StationDetailsSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final brandName =
         franchise?.name ?? station.franchiseName ?? 'Brand not available';
+    final effectiveStation = stationDetail ?? station;
     final sortedPrices = _sortStationPricesForCards(
-      station.latestPrices,
+      effectiveStation.latestPrices,
       preferredFuelCode,
     );
 
@@ -89,17 +102,18 @@ class _StationDetailsSheet extends StatelessWidget {
                     const _SheetHandle(),
                     const SizedBox(height: 8),
                     _StationHeader(
-                      station: station,
+                      station: effectiveStation,
                       franchise: franchise,
                       brandName: brandName,
                       onNavigatePressed:
-                          station.lat != null && station.lng != null
+                          effectiveStation.lat != null &&
+                              effectiveStation.lng != null
                           ? () {
                               _openGoogleMapsNavigation(
                                 context,
-                                lat: station.lat!,
-                                lng: station.lng!,
-                                label: station.name,
+                                lat: effectiveStation.lat!,
+                                lng: effectiveStation.lng!,
+                                label: effectiveStation.name,
                               );
                             }
                           : null,
@@ -130,8 +144,8 @@ class _StationDetailsSheet extends StatelessWidget {
                       title: 'Opening hours',
                       icon: Icons.schedule_outlined,
                       lines: [
-                        station.openHours?.trim().isNotEmpty == true
-                            ? station.openHours!.trim()
+                        effectiveStation.openHours?.trim().isNotEmpty == true
+                            ? effectiveStation.openHours!.trim()
                             : 'Opening hours not available',
                       ],
                     ),
@@ -140,16 +154,25 @@ class _StationDetailsSheet extends StatelessWidget {
                       title: 'Address',
                       icon: Icons.pin_drop_outlined,
                       lines: [
-                        if (station.address?.trim().isNotEmpty == true)
-                          station.address!.trim(),
-                        station.zipCode?.trim().isNotEmpty == true
-                            ? station.zipCode!.trim()
+                        if (effectiveStation.address?.trim().isNotEmpty == true)
+                          effectiveStation.address!.trim(),
+                        effectiveStation.zipCode?.trim().isNotEmpty == true
+                            ? effectiveStation.zipCode!.trim()
                             : '',
                       ],
                     ),
-                    if (station.mol != null) ...[
+                    if (stationDetail?.mol != null) ...[
                       const SizedBox(height: 8),
-                      _MolInfoSection(mol: station.mol!),
+                      _MolInfoSection(mol: stationDetail!.mol!),
+                    ] else if (isLoadingDetail) ...[
+                      const SizedBox(height: 12),
+                      const Center(
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      ),
                     ],
                   ],
                 ),

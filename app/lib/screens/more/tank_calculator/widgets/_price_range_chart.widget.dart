@@ -1,3 +1,5 @@
+import 'package:app/widgets/base/base.dart';
+import 'package:dart_util_box/dart_util_box.dart';
 import 'package:flutter/material.dart';
 
 import 'package:app/styles/styles.dart';
@@ -92,59 +94,58 @@ class PriceRangeChart extends StatelessWidget {
         ? globalDiff / priciestTotal * 100
         : 0.0;
 
-    final hasDiffNearby =
-        cheapNearbyTotal != null && expNearbyTotal != null;
-    final nearbyDiff = hasDiffNearby
-        ? expNearbyTotal - cheapNearbyTotal
+    final hasDiffNearby = cheapNearbyTotal != null && expNearbyTotal != null;
+    final nearbyDiff = hasDiffNearby ? expNearbyTotal - cheapNearbyTotal : null;
+    final nearbyDiffPct = hasDiffNearby && expNearbyTotal > 0
+        ? nearbyDiff! / expNearbyTotal * 100
         : null;
-    final nearbyDiffPct =
-        hasDiffNearby && expNearbyTotal > 0
-            ? nearbyDiff! / expNearbyTotal * 100
-            : null;
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.glassFill,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.glassStroke),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'PRICE RANGE',
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: AppColors.textBodyMedium,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1.2,
-            ),
+    return Column(
+      mainAxisSize: .min,
+      crossAxisAlignment: .start,
+      spacing: 8,
+      children: [
+        Text(
+          'PRICE RANGE',
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            color: AppColors.textBodyMedium,
+            fontWeight: .w700,
+            letterSpacing: 1.2,
           ),
-          const SizedBox(height: 14),
-          ...bars.map(
-            (bar) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: _PriceBar(entry: bar),
-            ),
+        ),
+        GlassCard(child:  Column(
+          mainAxisSize: .min,
+          crossAxisAlignment: .start,
+          spacing: 8,
+          children: bars.mapToList((e) => _PriceBar(entry: e)),
+        )),
+        Container(
+          padding: .all(16),
+          decoration: BoxDecoration(
+            color: AppColors.glassFill,
+            borderRadius: .circular(22),
+            border: .all(color: AppColors.glassStroke),
           ),
-          const SizedBox(height: 8),
-          const Divider(color: AppColors.glassStroke, height: 1),
-          const SizedBox(height: 14),
-          _DiffRow(
-            label: 'GLOBAL DIFF',
-            diff: globalDiff,
-            diffPct: globalDiffPct,
+          child: Column(
+            crossAxisAlignment: .start,
+            mainAxisSize: .min,
+            spacing: 8,
+            children: [
+              _DiffRow(
+                label: 'GLOBAL DIFF',
+                diff: globalDiff,
+                diffPct: globalDiffPct,
+              ),
+              if (nearbyDiff != null)
+                _DiffRow(
+                  label: '30 KM DIFF',
+                  diff: nearbyDiff,
+                  diffPct: nearbyDiffPct!,
+                ),
+            ],
           ),
-          if (nearbyDiff != null) ...[
-            const SizedBox(height: 8),
-            _DiffRow(
-              label: '30 KM DIFF',
-              diff: nearbyDiff,
-              diffPct: nearbyDiffPct!,
-            ),
-          ],
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -176,8 +177,10 @@ class _PriceBar extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final barWidth =
-            (constraints.maxWidth * entry.fraction).clamp(80.0, constraints.maxWidth);
+        final barWidth = (constraints.maxWidth * entry.fraction).clamp(
+          80.0,
+          constraints.maxWidth,
+        );
 
         return AnimatedContainer(
           duration: const Duration(milliseconds: 400),

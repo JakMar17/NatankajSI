@@ -35,9 +35,22 @@ class FuelLocationsCubit extends Cubit<FuelLocationsState> {
 
     try {
       final boot = _appBootRepository.data;
-      final stations = boot != null
-          ? boot.stations
-          : await _stationsApiService.listStations();
+      final List<StationWithPrices> stations;
+      if (boot != null) {
+        final pricesById = _appBootRepository.latestPricesFuture != null
+            ? await _appBootRepository.latestPricesFuture!
+            : await _stationsApiService.listLatestPrices();
+        stations = mergeStationsWithPrices(boot.stations, pricesById);
+      } else {
+        final results = await Future.wait<dynamic>([
+          _stationsApiService.listStations(),
+          _stationsApiService.listLatestPrices(),
+        ]);
+        stations = mergeStationsWithPrices(
+          results[0] as List<Station>,
+          results[1] as Map<int, List<LatestPriceEntry>>,
+        );
+      }
       final userLocation =
           boot?.userLocation ?? await _checkUserLocation();
       final normalizedFuelCode = fuelCode.trim().toLowerCase();

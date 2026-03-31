@@ -37,15 +37,22 @@ class StatisticsCubit extends Cubit<StatisticsState> {
 
       final boot = _appBootRepository.data;
       if (boot != null) {
-        stations = boot.stations;
+        final pricesById = _appBootRepository.latestPricesFuture != null
+            ? await _appBootRepository.latestPricesFuture!
+            : await _stationsApiService.listLatestPrices();
+        stations = mergeStationsWithPrices(boot.stations, pricesById);
         fuels = boot.fuels;
       } else {
         final results = await Future.wait<dynamic>([
           _stationsApiService.listStations(),
+          _stationsApiService.listLatestPrices(),
           _fuelsApiService.listFuels(),
         ]);
-        stations = results[0] as List<StationWithPrices>;
-        fuels = results[1] as List<FuelType>;
+        stations = mergeStationsWithPrices(
+          results[0] as List<Station>,
+          results[1] as Map<int, List<LatestPriceEntry>>,
+        );
+        fuels = results[2] as List<FuelType>;
       }
 
       final userLocation = boot?.userLocation ?? await _checkUserLocation();
